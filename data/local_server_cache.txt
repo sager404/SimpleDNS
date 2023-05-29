@@ -1,0 +1,1 @@
+www.baidu.com 86100 IN A 123.4.5.6
