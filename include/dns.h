@@ -48,7 +48,7 @@ struct DNS_RR {
     unsigned short length;
     unsigned char *rdata;
 };
-
+void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void serialize_addr(char *addr, char **rdata);
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
                     short ancount);

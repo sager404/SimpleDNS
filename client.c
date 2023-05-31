@@ -64,4 +64,5 @@ int main() {
     free(query->name);
     free(header);
     free(query);
+    close(sock);
 }

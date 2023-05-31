@@ -1,5 +1,11 @@
 #include "dns.h"
 
+void init_addr(struct sockaddr_in *sockaddr, const char *addr){
+    memset(sockaddr, 0, sizeof(struct sockaddr_in));
+    sockaddr->sin_family = AF_INET;
+    sockaddr->sin_addr.s_addr = inet_addr(addr);
+    sockaddr->sin_port = htons(DNS_PORT);
+}
 
 void serialize_addr(char *addr, char **rdata) {
     in_addr_t in_addr = inet_addr(addr);
@@ -152,7 +158,7 @@ void add_rr(char *packet, struct DNS_RR *rr, int offset) {
 }
 
 int udp_socket() {
-    int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    int sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror("client: socket failed");
         close(sock);
