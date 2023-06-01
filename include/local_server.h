@@ -6,6 +6,6 @@
 void init_local_addr(struct sockaddr_in *local_server_addr);
 void gen_local_query_packet(char *packet, struct DNS_Header *header,
                             struct DNS_RR *rr, int len, char *rdata);
-int get_local_cache(char *qname, char *data, struct DNS_RR *rr);
+int get_local_cache(char *qname, short type, struct DNS_RR *rr);
 
 #endif

@@ -24,7 +24,7 @@
 #define CLIENT_IP "127.0.0.1"
 #define LOCAL_SERVER_IP "127.0.1.1"
 #define ROOT_SERVER_IP "127.1.0.1"
-
+#define NAME_PTR 0xc0
 struct DNS_Header {
     unsigned short id;
     unsigned short flags;
@@ -41,28 +41,29 @@ struct DNS_Query {
 };
 
 struct DNS_RR {
-    unsigned char name[2];
+    unsigned char *name;
     unsigned short type;
     unsigned short rclass;
     unsigned int ttl;
     unsigned short length;
     unsigned char *rdata;
 };
+
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void serialize_addr(char *addr, char **rdata);
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
                     short ancount);
 void gen_dns_query(struct DNS_Query *query, char *name, short qtype);
 void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr,
-                char offset);
-int parse_query_packet(char *packet, struct DNS_Header *header,
+                char offset, char *name);
+short parse_query_packet(char *packet, struct DNS_Header *header,
                        struct DNS_Query *query, char *name);
 void gen_response_packet(char *packet, struct DNS_Header *header,
                          short answerNum);
-void gen_dns_response(struct DNS_RR *answer, char *addr, char offset,
-                      short type, int ttl);
 short get_type(char *type);
-void add_rr(char *packet, struct DNS_RR *rr, int offset);
-int udp_socket();
-
+short add_rr(char *packet, struct DNS_RR *rr, int offset);
+void parse_name(char *rname, char *name);
+void serialize_name(char *rname, char *name);
+short get_name_length(unsigned char *rname);
+uint16_t cal_packet_len(char *packet);
 #endif

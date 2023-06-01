@@ -1,5 +1,6 @@
 #include "client.h"
-
+#include "dns.h"
+#include <stdlib.h>
 
 void init_client_addr(struct sockaddr_in *local_server_addr) {
     memset(local_server_addr, 0, sizeof(struct sockaddr_in));
@@ -9,9 +10,9 @@ void init_client_addr(struct sockaddr_in *local_server_addr) {
 }
 
 void gen_client_query_packet(char *packet, struct DNS_Header *header,
-                             struct DNS_Query *query, char *qname) {
+                             struct DNS_Query *query) {
     memcpy(packet, header, sizeof(struct DNS_Header));
-    int name_len = strlen(qname) + 2;
+    int name_len = get_name_length(query->name);
     int offset = sizeof(struct DNS_Header);
     memcpy(packet + offset, query->name, name_len);
     offset += name_len;
@@ -30,22 +31,15 @@ void parse_dns_response(unsigned char *packet, struct DNS_RR *rr) {
     short queryNum = ntohs(header->queryNum);
     short answerNum = ntohs(header->answerNum);
     for (int n = 0; n < queryNum; n++) {
-        while (1) {
-            if (packet[i] == '\0') {
-                i++;
-                break;
-            }
-            i += packet[i] + 1;
-        }
+        i += get_name_length(packet + i);
 
         i += 4;
     }
 
     for (int n = 0; n < answerNum; n++) {
-        if (packet[i] == 0xc0) {
-            offset = packet[i + 1];
-            i += 2;
-        }
+
+        i += get_name_length(packet + i);
+
         // type
         memcpy(&rr->type, packet + i, sizeof(rr->type));
         i += sizeof(rr->type);
