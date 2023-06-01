@@ -34,20 +34,26 @@ struct DNS_Header {
     unsigned short addNum;
 };
 
+typedef struct DNS_Header dns_header;
+
 struct DNS_Query {
     unsigned char *name;
     unsigned short qtype;
     unsigned short qclass;
 };
 
+typedef struct DNS_Query dns_query;
+
 struct DNS_RR {
-    unsigned char name[2];
+    unsigned char *name;
     unsigned short type;
     unsigned short rclass;
     unsigned int ttl;
     unsigned short length;
     unsigned char *rdata;
 };
+
+typedef struct DNS_RR dns_rr;
 
 void serialize_addr(char *addr, char **rdata);
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
@@ -64,5 +70,7 @@ void gen_dns_response(struct DNS_RR *answer, char *addr, char offset,
 short get_type(char *type);
 void add_rr(char *packet, struct DNS_RR *rr, int offset);
 int udp_socket();
+
+
 
 #endif
