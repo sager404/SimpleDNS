@@ -1,4 +1,5 @@
 #include "local_server.h"
+#include "dns.h"
 
 
 void init_local_addr(struct sockaddr_in *local_server_addr) {
@@ -14,8 +15,13 @@ void gen_local_query_packet(char *packet, struct DNS_Header *header,
     header->flags = FLAGS_RESPONSE;
     memcpy(packet + offset, &header->flags, sizeof(header->flags));
     offset = len;
-    memcpy(packet + offset, rr->name, sizeof(rr->name));
-    offset += sizeof(rr->name);
+    if (packet[offset] == NAME_PTR){
+        memcpy(packet + offset, rr->name, 2);
+        offset += 2;
+    }else{
+
+    }
+
     memcpy(packet + offset, &rr->type, sizeof(rr->type));
     offset += sizeof(rr->type);
     memcpy(packet + offset, &rr->rclass, sizeof(rr->rclass));
@@ -28,19 +34,23 @@ void gen_local_query_packet(char *packet, struct DNS_Header *header,
     offset += strlen(rdata);
 }
 
-int get_local_cache(char *qname, char *data, struct DNS_RR *rr) {
-    FILE *fp = fopen("./data/local_server_cache.txt", "r");
+int get_local_cache(char *qname, short type, struct DNS_RR *rr) {
+    FILE *fp = fopen("../data/local_server_cache.txt", "r");
     while (!feof(fp)) {
         char name[128] = {0};
         int ttl;
         char rclass[3] = {0};
-        char type[6] = {0};
+        char rtype[6] = {0};
         char rdata[128] = {0};
-        fscanf(fp, "%s %d %s %s %s\n", name, &ttl, rclass, type, rdata);
+        fscanf(fp, "%s %d %s %s %s\n", name, &ttl, rclass, rtype, rdata);
         if (!strcmp(qname, name)) {
+            if (get_type(rtype) == A && type == A){
+                gen_dns_rr(rr, A, ttl, rdata, 0x0c, name);
+            }else if(get_type(rtype) == A && type == MX){
+                gen_dns_rr(rr, MX, ttl, rdata, 0, name);
+            }
 
-            gen_dns_rr(rr, get_type(type), ttl, rdata, 0x0c);
-            data = rdata;
+
             return 1;
         }
     }

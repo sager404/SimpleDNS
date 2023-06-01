@@ -1,14 +1,19 @@
 #include "client.h"
+#include "dns.h"
 #include "local_server.h"
 
 
 int main() {
     struct sockaddr_in client_addr;
-    init_client_addr(&client_addr);
+    init_addr(&client_addr, CLIENT_IP);
     struct sockaddr_in local_server_addr;
-    init_local_addr(&local_server_addr);
+    init_addr(&local_server_addr, LOCAL_SERVER_IP);
 
-    int sock = udp_socket();
+    int sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("client: socket failed");
+        close(sock);
+    }
     // if (connect(sock, (struct sockaddr *)&localserver_addr,
     //             sizeof(localserver_addr)) < 1) {
     //     perror("connect failed");
@@ -41,7 +46,7 @@ int main() {
     // memset(query, 0, strlen(qname)+5);
     gen_dns_header(header, FLAGS_QUERY, 1, 0);
     gen_dns_query(query, qname, type);
-    gen_client_query_packet(packetOut, header, query, qname);
+    gen_client_query_packet(packetOut, header, query);
 
     if (sendto(sock, packetOut, BUFSIZE, 0,
                (struct sockaddr *)&local_server_addr,
@@ -64,4 +69,5 @@ int main() {
     free(query->name);
     free(header);
     free(query);
+    close(sock);
 }
