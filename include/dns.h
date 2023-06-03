@@ -31,13 +31,13 @@ struct DNS_Header {
   unsigned short authorNum;
   unsigned short addNum;
 };
-
+typedef struct DNS_Header dns_header;
 struct DNS_Query {
   unsigned char *name;
   unsigned short qtype;
   unsigned short qclass;
 };
-
+typedef struct DNS_Query dns_query;
 struct DNS_RR {
   unsigned char *name;
   unsigned short type;
@@ -46,6 +46,7 @@ struct DNS_RR {
   unsigned short length;
   unsigned char *rdata;
 };
+typedef struct DNS_RR dns_rr;
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void parse_addr(char *addr, char *rdata);
