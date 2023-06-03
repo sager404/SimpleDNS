@@ -1,5 +1,6 @@
 #include "dns.h"
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr) {
@@ -17,6 +18,14 @@ void serialize_addr(char *addr, char **rdata) {
     *rdata = (unsigned int *)&in_addr;
 }
 
+void parse_addr(char *addr, char *rdata) {
+    struct in_addr a;
+    memset(&a, 0, sizeof(struct in_addr));
+    a.s_addr = *(unsigned int *)(rdata);
+    char *tmp = inet_ntoa(a);
+    memcpy(addr,tmp,strlen(tmp));
+}
+
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
                     short ancount) {
     header->id = htons(1);
@@ -28,6 +37,8 @@ void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
 }
 
 void gen_dns_query(struct DNS_Query *query, char *name, short qtype) {
+    int len = strlen(name) + 1;
+    query->name = malloc(len + 1);
     serialize_name(query->name, name);
 
     query->qtype = htons(qtype);
@@ -36,11 +47,12 @@ void gen_dns_query(struct DNS_Query *query, char *name, short qtype) {
 
 void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr, char offset,
                 char *name) {
-    if (offset == 0) {
-        memset(rr->name, 0, 2);
+    if (offset != 0) {
+        rr->name = malloc(2);
         rr->name[0] = NAME_PTR;
         rr->name[1] = offset;
     } else {
+        rr->name = malloc(strlen(name) + 2);
         serialize_name(rr->name, name);
     }
 
@@ -63,46 +75,32 @@ void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr, char offset,
 }
 
 short parse_query_packet(char *packet, struct DNS_Header *header,
-                         struct DNS_Query *query, char *name) {
-    int i = 0;
-    int j = 0;
-    int name_len = 0;
-    int offset = 0;
+                         struct DNS_Query *query) {
 
-    offset = sizeof(struct DNS_Header);
-    i += offset;
+    int offset = sizeof(struct DNS_Header);
+    char name[128] = {0};
     for (int n = 0; n < ntohs(header->queryNum); n++) {
-        while (1) {
-            if (packet[i] == '\0') {
-                j--;
-                name[j] = '\0';
-                name_len = j;
-                query->name = malloc(name_len);
-                memcpy(query->name, name, name_len);
-                break;
-            }
-            memcpy(name + j, packet + i + 1, packet[i]);
-
-            j += packet[i];
-            i += packet[i] + 1;
-            name[j] = '.';
-            j++;
-        }
+        parse_name(packet + offset, name);
+        int len = strlen(name)+1;
+        query->name = malloc(len);
+        memcpy(query->name, name, len);
+        offset += (len+1);
+        
     }
+    
+    memcpy(&query->qtype, packet + offset, sizeof(query->qtype));
+    offset += sizeof(query->qtype);
+    memcpy(&query->qclass, packet + offset, sizeof(query->qclass));
+    offset += sizeof(query->qclass);
 
-    memcpy(&query->qtype, packet + i, sizeof(query->qtype));
-    i += sizeof(header->addNum);
-    memcpy(&query->qclass, packet + i, sizeof(query->qclass));
-    i += sizeof(query->qclass);
-
-    return i;
+    return offset;
 }
 
 void gen_response_packet(char *packet, struct DNS_Header *header,
                          short answerNum) {
     header->flags = htons(FLAGS_RESPONSE);
     header->answerNum = htons(answerNum);
-    // memcpy(packet,header,sizeof(struct DNS_Header));
+    memcpy(packet,header,sizeof(struct DNS_Header));
 }
 
 short get_type(char *type) {
@@ -120,12 +118,13 @@ short get_type(char *type) {
         return 0;
 }
 
-short add_rr(char *packet, struct DNS_RR *rr, int offset) {
+short add_rr(char *packet, struct DNS_RR *rr) {
+    int offset = 0;
     if (rr->name[0] == NAME_PTR) {
         memcpy(packet + offset, rr->name, 2);
         offset += 2;
     } else {
-        int len = get_name_length(rr->name);
+        int len = get_rname_length(rr->name);
         memcpy(packet + offset, rr->name, len);
         offset += len;
     }
@@ -133,11 +132,11 @@ short add_rr(char *packet, struct DNS_RR *rr, int offset) {
     memcpy(packet + offset, &rr->type, sizeof(rr->type));
     offset += sizeof(rr->type);
     memcpy(packet + offset, &rr->rclass, sizeof(rr->rclass));
-    offset += sizeof(rr->name);
+    offset += sizeof(rr->rclass);
     memcpy(packet + offset, &rr->ttl, sizeof(rr->ttl));
     offset += sizeof(rr->ttl);
     memcpy(packet + offset, &rr->length, sizeof(rr->length));
-    offset += sizeof(rr->name);
+    offset += sizeof(rr->length);
     int length = htons(rr->length);
     memcpy(packet + offset, rr->rdata, length);
     offset += length;
@@ -148,11 +147,18 @@ short get_name_offset(char *packet, char *name) {
     short offset = sizeof(struct DNS_Header);
 }
 
-void parse_name(char *rname, char *name) {}
+void parse_name(char *rname, char *name) {
+    int i = 0;
+    while (rname[i] != '\0') {
+        memcpy(name + i, rname + i + 1, rname[i]);
+        i += (rname[i] + 1);
+        name[i - 1] = '.';
+    }
+    name[i - 1] = '\0';
+}
 
 void serialize_name(char *rname, char *name) {
     int len = strlen(name) + 1;
-    rname = malloc(len + 1);
     memcpy(rname + 1, name, len);
     int m = 0;
     char count = 0;
@@ -165,33 +171,38 @@ void serialize_name(char *rname, char *name) {
             count++;
         }
     }
-    rname[m] = count;
+    rname[m] = --count;
 }
 
-short get_name_length(unsigned char *rname) {
+short get_rname_length(unsigned char *rname) {
     if (rname[0] == NAME_PTR)
         return 2;
     int i = 0;
-    int len = 0;
     while (rname[i] != 0x00) {
         i += (rname[i] + 1);
     }
-    return i++;
+    return ++i;
 }
 
 uint16_t cal_packet_len(char *packet) {
     struct DNS_Header *header = (struct DNS_Header *)(packet + 2);
     uint16_t len = sizeof(*header);
     for (int i = 0; i < header->queryNum; i++) {
-        len += get_name_length(packet + len);
+        len += get_rname_length(packet + len);
         len += 4;
     }
     for (int i = 0; i < header->answerNum; i++) {
-        len += get_name_length(packet + len);
+        len += get_rname_length(packet + len);
         // type rclass ttl
         len += 8;
         len += *(short *)(packet + len);
         len += 2;
     }
     return len;
+}
+
+void free_rr(struct DNS_RR *rr) {
+    free(rr->name);
+    free(rr->rdata);
+    free(rr);
 }

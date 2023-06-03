@@ -1,7 +1,5 @@
 #include "client.h"
 #include "dns.h"
-#include "local_server.h"
-
 
 int main() {
     struct sockaddr_in client_addr;
@@ -9,7 +7,7 @@ int main() {
     struct sockaddr_in local_server_addr;
     init_addr(&local_server_addr, LOCAL_SERVER_IP);
 
-    int sock = socket(PF_INET, SOCK_STREAM, 0);
+    int sock = socket(PF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         perror("client: socket failed");
         close(sock);
@@ -46,10 +44,9 @@ int main() {
     // memset(query, 0, strlen(qname)+5);
     gen_dns_header(header, FLAGS_QUERY, 1, 0);
     gen_dns_query(query, qname, type);
-    gen_client_query_packet(packetOut, header, query);
+    int len = gen_client_query_packet(packetOut, header, query);
 
-    if (sendto(sock, packetOut, BUFSIZE, 0,
-               (struct sockaddr *)&local_server_addr,
+    if (sendto(sock, packetOut, ++len, 0, (struct sockaddr *)&local_server_addr,
                sizeof(local_server_addr)) < 0) {
         perror("client: sendto failed");
     }
@@ -62,7 +59,6 @@ int main() {
         struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
         parse_dns_response(packetIn, rr);
         printf("%s", rr->rdata);
-        free(rr->rdata);
         free(rr);
     }
 
