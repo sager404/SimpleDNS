@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "socket.h"
 
 int main() {
     struct sockaddr_in client_addr;

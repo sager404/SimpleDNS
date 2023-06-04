@@ -16,7 +16,6 @@
 #define PTR 12
 
 #define IN 1
-#define BUFSIZE 1024
 #define DNS_PORT 53000
 #define FLAGS_QUERY 0x0000
 #define FLAGS_RESPONSE 0x8000
