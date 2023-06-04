@@ -14,7 +14,6 @@
 
 #define LINE 10
 #define DNS_MAX_LENGTH 1023
-#define ROOT_SERVER_IP "127.0.0.3"
 
 void initHead(struct DNS_Header *head);
 void initQuery(struct DNS_Query *query);

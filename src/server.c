@@ -1,7 +1,9 @@
 #include "server.h"
 #include "dns.h"
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 void gen_tcp_packet(char *packet, int len) {
     char tmp[BUFSIZE] = {0};
@@ -54,19 +56,6 @@ void get_third_name(char *rname, char *name) {
     memcpy(name, rname + start + 1, rname[start]);
 }
 
-int parse_dns_query(char *packet, struct DNS_Query *query) {
-    int offset = 12;
-    int len = get_rname_length(packet + 12);
-    query->name = malloc(len);
-    parse_name(query->name, packet + 12);
-    offset += len;
-    memcpy(query->qtype, packet + offset, 2);
-    offset += 2;
-    memcpy(query->qclass, packet + offset, 2);
-    offset += 2;
-    return offset;
-}
-
 int parse_rr(char *packet, struct DNS_RR *rr) {
     int len = get_rname_length(packet);
     rr->name = malloc(len);
@@ -106,4 +95,65 @@ int get_local_cache(struct DNS_Query *query, struct DNS_RR *rr) {
     }
     fclose(fp);
     return 0;
+}
+
+int udp_socket() {
+    int sock = socket(PF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        perror("client: socket failed");
+        close(sock);
+    }
+    return sock;
+}
+
+int tcp_socket() {
+    int sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("client: socket failed");
+        close(sock);
+    }
+    return sock;
+}
+
+void tcp_connect(int sock, struct sockaddr_in *dest_addr) {
+    if (connect(sock, (struct sockaddr *)dest_addr,
+                sizeof(struct sockaddr_in)) == -1) {
+        perror("client: failed to connect to server");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void tcp_listen(int sock) {
+    if (listen(sock, LISTEN_BACKLOG) == -1) {
+        perror("server: failed to listen");
+        exit(EXIT_FAILURE);
+    }
+}
+
+int tcp_accept(int sock, struct sockaddr_in *client_addr) {
+    socklen_t client_addr_len = sizeof(struct sockaddr_in);
+    int client_sock =
+        accept(sock, (struct sockaddr *)client_addr, &client_addr_len);
+    if (client_sock == -1) {
+        perror("Failed to accept");
+        exit(EXIT_FAILURE);
+    }
+    return client_sock;
+}
+
+void tcp_send(int sock, char *buffer) {
+    if (send(sock, buffer, strlen(buffer), 0) != strlen(buffer)) {
+        perror("client: send failed");
+    }
+}
+
+ssize_t tcp_receive(int sock, char *buffer) {
+    ssize_t rlen = recv(sock, buffer, BUFSIZE - 1, 0);
+    if (rlen == -1) {
+        perror("server: receive failed");
+        exit(EXIT_FAILURE);
+    } else if (rlen == 0) {
+        printf("server: client disconnected\n");
+    }
+    return rlen;
 }

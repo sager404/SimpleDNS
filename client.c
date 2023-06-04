@@ -1,5 +1,6 @@
 #include "client.h"
 #include "dns.h"
+#include "server.h"
 
 int main() {
     struct sockaddr_in client_addr;
