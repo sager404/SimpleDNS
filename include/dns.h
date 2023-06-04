@@ -22,27 +22,28 @@
 #define FLAGS_NOTFOUND 0x8003
 
 #define NAME_PTR 0xc0
-struct DNS_Header {
+typedef struct DNS_Header {
   unsigned short id;
   unsigned short flags;
   unsigned short queryNum;
   unsigned short answerNum;
   unsigned short authorNum;
   unsigned short addNum;
-};
-struct DNS_Query {
+}dns_header;
+
+typedef struct DNS_Query {
   unsigned char *name;
   unsigned short qtype;
   unsigned short qclass;
-};
-struct DNS_RR {
+}dns_query;
+typedef struct DNS_RR {
   unsigned char *name;
   unsigned short type;
   unsigned short rclass;
   unsigned int ttl;
   unsigned short length;
   unsigned char *rdata;
-};
+}dns_rr;
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void parse_addr(char *addr, char *rdata);
