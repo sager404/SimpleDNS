@@ -44,57 +44,62 @@ int main() {
         memcpy(packet, query_packet, BUFSIZE);
         short len = add_rr(packet + offset, rr);
         gen_response_packet(packet, header, 1);
-        sendto(sock, packet, offset + len + 1, 0,
+        sendto(sock, packet, offset + len, 0,
                (struct sockaddr *)&client_addr, sizeof(client_addr));
         free(query);
         free(rr);
     } else {
         close(sock);
-        gen_tcp_packet(packet, offset);
+        gen_tcp_packet(query_packet, offset);
         free(rr);
-        memcpy(query_packet + 2, packet + 2, offset);
-        int l = htons(offset);
-        memcpy(query_packet, &l, 2);
         sock = socket(PF_INET, SOCK_STREAM, 0);
         if (bind(sock, (struct sockaddr *)&local_server_addr,
                  sizeof(local_server_addr)) < 0) {
             perror("local_server: bind failed");
         }
-        if (!connect(sock, (struct sockaddr *)&root_server_addr,
-                     sizeof(root_server_addr))) {
-
-            if (send(sock, packet, BUFSIZE, 0) < 0) {
-                perror("local_server: send root_server failed");
-            }
-            for (int i = 0; i < 3;i++) {
-                memset(packet, 0, BUFSIZE);
-                recv(sock, packet, BUFSIZE, 0);
-                header = (struct DNS_Header *)packet;
-                if (header->answerNum == 0) {
-                    if (header->authorNum != 0) {
-                        for (int i = 0; i < header->authorNum; i++) {
-                            free(rr);
-                            offset += parse_rr(packet + offset, rr);
-                        }
-                        for (int i = 0; i < header->addNum; i++) {
-                            free(rr);
-                            offset += parse_rr(packet + offset, rr);
-                        }
-                        char ns_addr[16];
-                        parse_addr(ns_addr, rr->rdata);
-                        struct sockaddr_in ns;
-                        init_addr(&ns, ns_addr);
-                        if (connect(sock, (struct sockaddr *)&ns, sizeof(ns)) <
-                            0) {
-                            perror("connect failed");
-                        }
-                        send(sock, query_packet, BUFSIZE, 0);
-                    }
-                }
-            }
-
-        } else {
+        if (connect(sock, (struct sockaddr *)&root_server_addr,
+                    sizeof(root_server_addr)) < 0) {
             perror("local_server:connect root_server failed");
+        }
+        if (send(sock, query_packet, offset+2, 0) < 0) {
+            perror("local_server: send root_server failed");
+        }
+        for (int i = 0; i < 3; i++) {
+            memset(packet, 0, BUFSIZE);
+            recv(sock, packet, BUFSIZE, 0);
+            header = (struct DNS_Header *)packet;
+            if (header->answerNum == 0) {
+                if (header->authorNum != 0) {
+                    for (int i = 0; i < header->authorNum; i++) {
+                        free(rr);
+                        offset += parse_rr(packet + offset, rr);
+                    }
+                    for (int i = 0; i < header->addNum; i++) {
+                        free(rr);
+                        offset += parse_rr(packet + offset, rr);
+                    }
+                    char ns_addr[16];
+                    parse_addr(ns_addr, rr->rdata);
+                    struct sockaddr_in ns;
+                    init_addr(&ns, ns_addr);
+                    if (connect(sock, (struct sockaddr *)&ns, sizeof(ns)) < 0) {
+                        perror("connect failed");
+                    }
+                    send(sock, query_packet, BUFSIZE, 0);
+                }
+            } else {
+                close(sock);
+                int len = cal_packet_len(packet);
+                gen_udp_packet(packet, len);
+                sock = socket(PF_INET, SOCK_DGRAM, 0);
+                if (bind(sock, (struct sockaddr *)&local_server_addr,
+                         sizeof(local_server_addr)) < 0) {
+                    perror("local_server: bind failed");
+                }
+                sendto(sock, packet, BUFSIZE, 0,
+                       (struct sockaddr *)&client_addr, client_addr_len);
+                break;
+            }
         }
     }
     close(sock);

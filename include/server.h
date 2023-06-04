@@ -9,7 +9,7 @@
 #define TLD2_SERVER_IP "127.1.1.2"
 #define SCD1_SERVER_IP "127.1.2.1"
 #define SCD2_SERVER_IP "127.1.2.2"
-#define ROOT_SERVER_NAME "ns.com"
+#define TLD1_SERVER_NAME "ns.com"
 
 void gen_tcp_packet(char *packet, int len);
 void update_packet_len(char *packet);

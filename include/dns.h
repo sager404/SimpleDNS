@@ -51,7 +51,7 @@ void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
 void gen_dns_query(struct DNS_Query *query, char *name, short qtype);
 void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr, char offset,
                 char *name);
-short parse_query_packet(char *packet, struct DNS_Header *header,
+unsigned short parse_query_packet(char *packet, struct DNS_Header *header,
                          struct DNS_Query *query);
 void gen_response_packet(char *packet, struct DNS_Header *header,
                          short answerNum);
