@@ -4,7 +4,6 @@
 #include "dns.h"
 
 #define CLIENT_IP "127.0.0.1"
-#define LOCAL_SERVER_IP "127.0.0.2"
 
 int gen_client_query_packet(char *packet, struct DNS_Header *header,
                             struct DNS_Query *query);
