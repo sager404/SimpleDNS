@@ -68,23 +68,27 @@ void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr, char offset,
     } else {
         len = strlen(addr) + 1;
         rr->rdata = malloc(len);
-        strcpy(rr->rdata, addr);
+        serialize_name(rr->rdata, addr);
     }
 
     rr->length = htons(len);
 }
 
-short parse_query_packet(char *packet, struct DNS_Header *header,
+unsigned short parse_query_packet(char *packet, struct DNS_Header *header,
                          struct DNS_Query *query) {
 
-    int offset = sizeof(struct DNS_Header);
+    unsigned short offset = sizeof(struct DNS_Header);
     char name[128] = {0};
     for (int n = 0; n < ntohs(header->queryNum); n++) {
-        parse_name(packet + offset, name);
-        int len = strlen(name)+1;
-        query->name = malloc(len);
-        memcpy(query->name, name, len);
-        offset += (len+1);
+        int len = 0;
+        int start = offset;
+        do {
+            offset++;
+            len++;
+        }while (packet[offset] != '\0');
+        query->name = malloc(++len);
+        memcpy(query->name, packet+start, len);
+        offset++;
         
     }
     
@@ -185,7 +189,7 @@ short get_rname_length(unsigned char *rname) {
 }
 
 uint16_t cal_packet_len(char *packet) {
-    struct DNS_Header *header = (struct DNS_Header *)(packet + 2);
+    struct DNS_Header *header = (struct DNS_Header *)(packet);
     uint16_t len = sizeof(*header);
     for (int i = 0; i < header->queryNum; i++) {
         len += get_rname_length(packet + len);
@@ -198,7 +202,21 @@ uint16_t cal_packet_len(char *packet) {
         len += *(short *)(packet + len);
         len += 2;
     }
-    return len;
+    for (int i = 0; i < header->authorNum; i++) {
+        len += get_rname_length(packet + len);
+        // type rclass ttl
+        len += 8;
+        len += *(short *)(packet + len);
+        len += 2;
+    }
+    for (int i = 0; i < header->addNum; i++) {
+        len += get_rname_length(packet + len);
+        // type rclass ttl
+        len += 8;
+        len += *(short *)(packet + len);
+        len += 2;
+    }
+    return ++len;
 }
 
 void free_rr(struct DNS_RR *rr) {

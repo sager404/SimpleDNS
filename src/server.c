@@ -11,6 +11,12 @@ void gen_tcp_packet(char *packet, int len) {
     memcpy(packet + 2, tmp, len);
 }
 
+void gen_udp_packet(char *packet, int len){
+    char tmp[BUFSIZE] = {0};
+    memcpy(tmp, packet, len);
+    memcpy(packet + 2, tmp, len);
+}
+
 void update_packet_len(char *packet) {
     u_int16_t len = cal_packet_len(packet + 2);
     memcpy(packet, &len, 2);
@@ -19,9 +25,9 @@ void update_packet_len(char *packet) {
 void get_root_name(char *name, char *root) {
 
     int i = 0;
-    char tmp[32];
+    char tmp[16];
     while (name[i] != '\0') {
-        memset(tmp, 0, 32);
+        memset(tmp, 0, 16);
         memcpy(tmp, name + i + 1, name[i]);
         i += (name[i] + 1);
     }
@@ -70,18 +76,18 @@ int parse_dns_query(char *packet, struct DNS_Query *query) {
 int parse_rr(char *packet, struct DNS_RR *rr) {
     int len = get_rname_length(packet);
     rr->name = malloc(len);
-    memcpy(packet, rr->name, len);
+    memcpy(rr->name, packet, len);
     int offset = len;
-    memcpy(packet + offset, &rr->type, sizeof(rr->type));
+    memcpy(&rr->type,packet + offset,  sizeof(rr->type));
     offset += sizeof(rr->type);
-    memcpy(packet + offset, &rr->rclass, sizeof(rr->rclass));
+    memcpy(&rr->rclass,packet + offset,  sizeof(rr->rclass));
     offset += sizeof(rr->name);
-    memcpy(packet + offset, &rr->ttl, sizeof(rr->ttl));
+    memcpy(&rr->ttl,packet + offset,  sizeof(rr->ttl));
     offset += sizeof(rr->ttl);
-    memcpy(packet + offset, &rr->length, sizeof(rr->length));
+    memcpy(&rr->length,packet + offset,  sizeof(rr->length));
     offset += sizeof(rr->length);
     int length = htons(rr->length);
-    memcpy(packet + offset, rr->rdata, length);
+    memcpy(rr->rdata, packet + offset, length);
     offset += length;
     return offset;
 }
@@ -97,7 +103,9 @@ int get_local_cache(struct DNS_Query *query, struct DNS_RR *rr) {
         char rtype[6] = {0};
         char rdata[128] = {0};
         fscanf(fp, "%s %d %s %s %s\n", name, &ttl, rclass, rtype, rdata);
-        if (!strcmp(query->name, name)) {
+        char rname[128] = {0};
+        parse_name(query->name,rname);
+        if (!strcmp(rname, name)) {
             if (get_type(rtype) == type) {
                 gen_dns_rr(rr, type, ttl, rdata, 0x0c, name);
                 return 1;

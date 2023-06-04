@@ -46,7 +46,7 @@ int main() {
     gen_dns_query(query, qname, type);
     int len = gen_client_query_packet(packetOut, header, query);
 
-    if (sendto(sock, packetOut, ++len, 0, (struct sockaddr *)&local_server_addr,
+    if (sendto(sock, packetOut, len, 0, (struct sockaddr *)&local_server_addr,
                sizeof(local_server_addr)) < 0) {
         perror("client: sendto failed");
     }
