@@ -1,16 +1,39 @@
 #include "root.h"
 #include "dns.h"
+#include <netinet/in.h>
+#include <stdint.h>
+#include <string.h>
 
-int gen_root_query_packet(char *packet, struct DNS_Header *header,
-                          struct DNS_Query *query) {
-    memcpy(packet, header, sizeof(struct DNS_Header));
-    int name_len = get_rname_length(query->name);
-    int offset = sizeof(struct DNS_Header);
-    memcpy(packet + offset, query->name, name_len);
-    offset += name_len;
-    memcpy(packet + offset, &query->qtype, sizeof(query->qtype));
-    offset += sizeof(query->qtype);
-    memcpy(packet + offset, &query->qclass, sizeof(query->qclass));
-    offset += sizeof(query->qclass);
+int deserialize_header(char *buffer, struct DNS_Header *header) {
+    int offset = 0;
+
+    header->id = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    header->flags = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    header->queryNum = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    header->answerNum = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    header->authorNum = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    header->addNum = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+
+    return offset;
+}
+
+int deserialize_query(char *buffer, struct DNS_Query *query) {
+    int offset = 0;
+
+    unsigned char *rname = (unsigned char *)malloc(strlen(buffer));
+    strcpy(rname, buffer);
+    parse_name(rname, query->name);
+    offset += strlen(buffer);
+    query->qtype = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+    query->qclass = ntohs(*((uint16_t *)buffer + offset));
+    offset += sizeof(uint16_t);
+
     return offset;
 }

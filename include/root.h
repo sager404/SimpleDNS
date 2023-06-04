@@ -13,19 +13,9 @@
 #include <unistd.h>
 
 #define LINE 10
-#define DNS_MAX_LENGTH 1023
+#define DNS_MAX_LENGTH 1024
 
-void initHead(struct DNS_Header *head);
-void initQuery(struct DNS_Query *query);
-void initRR(struct DNS_RR *rr);
-int isequal(char *str1, char *str2);
-void init_sockaddr_in(char *ip, int port, struct sockaddr_in *addr);
-unsigned int getHeader(char *q, struct DNS_Header *header);
-unsigned int getQuery(char *q, struct DNS_Query *query);
-void splitOneDomainName(char *domainName, char *splitName);
-unsigned int head2buf(char *o, struct DNS_Header *header);
-unsigned int query2buf(char *o, struct DNS_Query *query);
-unsigned int getRRs(char *q, struct DNS_RR *rRecord);
-unsigned int rr2buf(char *o, struct DNS_RR *rr);
+int deserialize_header(char *buffer, struct DNS_Header *header);
+int deserialize_query(char *buffer, struct DNS_Query *query);
 
 #endif
