@@ -3,6 +3,7 @@
 #include "client.h"
 #include "dns.h"
 #include "server.h"
+#include "socket.h"
 
 int main() {
     char qname[127] = {0};
@@ -10,10 +11,15 @@ int main() {
     char packetOut[BUFSIZE] = {0};
     char packetIn[BUFSIZE] = {0};
 
-    struct sockaddr_in client_addr;
+    struct sockaddr_in root_addr, client_addr;
+    init_addr(&root_addr, ROOT_SERVER_IP);
 
     int sock = tcp_socket();
+    server_bind(sock, &root_addr);
     tcp_listen(sock);
+
+    struct DNS_Header *header = malloc(sizeof(struct DNS_Header));
+    struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
 
     while (1) {
         int client_sock = tcp_accept(sock, &client_addr);
@@ -21,10 +27,11 @@ int main() {
 
         ssize_t rlen = 0;
         do {
-            rlen = tcp_receive(sock, buffer);
-
+            rlen = tcp_receive(client_sock, buffer);
+            parse_query_packet(buffer + 2, header, query);
         } while (rlen);
 
-        close(sock);
+        close(client_sock);
     }
+    close(sock);
 }
