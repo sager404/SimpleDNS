@@ -17,6 +17,7 @@
 
 #define IN 1
 #define DNS_PORT 53000
+#define SENDER_PORT 54000
 #define FLAGS_QUERY 0x0000
 #define FLAGS_RESPONSE 0x8000
 #define FLAGS_NOTFOUND 0x8003
@@ -46,6 +47,7 @@ typedef struct DNS_RR {
 }dns_rr;
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
+void init_sender_addr(struct sockaddr_in *sockaddr, const char *addr);
 void parse_addr(char *addr, char *rdata);
 void serialize_addr(char *addr, char **rdata);
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,
