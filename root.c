@@ -1,4 +1,5 @@
 #include "root.h"
+#include <netinet/in.h>
 #include <stdio.h>
 #include "client.h"
 #include "dns.h"
@@ -11,7 +12,8 @@ int main() {
     char packetOut[BUFSIZE] = {0};
     char packetIn[BUFSIZE] = {0};
 
-    struct sockaddr_in root_addr, client_addr;
+    struct sockaddr_in client_addr;
+    struct sockaddr_in root_addr;
     init_addr(&root_addr, ROOT_SERVER_IP);
 
     int sock = tcp_socket();

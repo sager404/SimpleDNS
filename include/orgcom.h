@@ -12,6 +12,8 @@
 #include<arpa/inet.h>
 #include<stdint.h>
 #include "dns.h"
+#include "client.h"
+#include "server.h"
 #define LINE 10
 #define DNS_MAX_LENGTH 1023
 
