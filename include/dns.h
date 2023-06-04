@@ -66,4 +66,5 @@ void serialize_name(char *rname, char *name);
 short get_rname_length(unsigned char *rname);
 uint16_t cal_packet_len(char *packet);
 void free_rr(struct DNS_RR *rr);
+void memory_dump(void *ptr, int len);
 #endif

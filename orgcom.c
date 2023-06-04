@@ -55,7 +55,7 @@ int main(){
 	resQuery = recvQuery;
 	resRecord->name=recvQuery->name;
     resRecord->rclass=recvQuery->qclass;
-	resRecord->type=recvQuery->qtype;
+	resRecord->type=recvQuery->qtype=A;
 	resRecord->ttl = (uint32_t)86400;
 	resRecord->length = 4;
 	
