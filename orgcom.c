@@ -16,7 +16,9 @@ int main(){
 	char ipAddr[100];
 	//不需要分割名字，因为已经是最底层服务器，拿文件查询即可 
 
+    init_addr(&localAddr, TLD1_SERVER_IP);
     sock = tcp_socket();
+    server_bind(sock, &localAddr);
     tcp_listen(sock);
 
     while(1){
@@ -47,7 +49,7 @@ int main(){
 	resHead->id =htons(recvHead->id);
 	resHead->flags =htons(0x8000);
 	resHead->queryNum =htons(recvHead->queryNum);
-	resHead->answerNum = htons(1); //这里不一定是1，若没查到怎么办？？ 
+	resHead->answerNum = htons(1); 
 	resHead->authorNum = 0;
 	resHead->addNum = 0;
 	resQuery = recvQuery;
