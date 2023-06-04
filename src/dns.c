@@ -10,6 +10,13 @@ void init_addr(struct sockaddr_in *sockaddr, const char *addr) {
     sockaddr->sin_port = htons(DNS_PORT);
 }
 
+void init_client_addr(struct sockaddr_in *sockaddr, const char *addr){
+    memset(sockaddr, 0, sizeof(struct sockaddr_in));
+    sockaddr->sin_family = AF_INET;
+    sockaddr->sin_addr.s_addr = inet_addr(addr);
+    sockaddr->sin_port = htons(DNS_PORT);
+}
+
 void serialize_addr(char *addr, char **rdata) {
     in_addr_t in_addr = inet_addr(addr);
     // unsigned char *ptr = &in_addr;

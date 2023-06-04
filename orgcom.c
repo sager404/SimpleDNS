@@ -1,7 +1,8 @@
 #include "dns.h"
 #include "client.h"
-#include "local_server.h"
 #include "orgcom.h"
+#include "server.h"
+#include "socket.h"
 
 int main(int argc, char *argv[]){
     int sock;
@@ -12,7 +13,7 @@ int main(int argc, char *argv[]){
 
     bzero(&localAddr,sizeof(localAddr));
     localAddr.sin_family = AF_INET;
-    localAddr.sin_addr.s_addr = inet_addr(ORGCOM_SERVER_IP);
+    localAddr.sin_addr.s_addr = inet_addr(TLD1_SERVER_IP);
     localAddr.sin_port = htons(0); 
     int client_socket = socket(AF_INET,SOCK_STREAM,0);
     if(client_socket < 0)

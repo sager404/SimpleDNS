@@ -19,6 +19,7 @@
 #define DNS_PORT 53000
 #define FLAGS_QUERY 0x0000
 #define FLAGS_RESPONSE 0x8000
+#define FLAGS_NOTFOUND 0x8003
 
 #define NAME_PTR 0xc0
 struct DNS_Header {

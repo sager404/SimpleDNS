@@ -9,11 +9,7 @@ int main() {
     struct sockaddr_in local_server_addr;
     init_addr(&local_server_addr, LOCAL_SERVER_IP);
 
-    int sock = socket(PF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) {
-        perror("client: socket failed");
-        close(sock);
-    }
+    int sock = udp_socket();
     // if (connect(sock, (struct sockaddr *)&localserver_addr,
     //             sizeof(localserver_addr)) < 1) {
     //     perror("connect failed");
@@ -48,21 +44,16 @@ int main() {
     gen_dns_query(query, qname, type);
     int len = gen_client_query_packet(packetOut, header, query);
 
-    if (sendto(sock, packetOut, len, 0, (struct sockaddr *)&local_server_addr,
-               sizeof(local_server_addr)) < 0) {
-        perror("client: sendto failed");
-    }
+    udp_send(sock, &local_server_addr, packetOut, len);
     unsigned int sock_len = 0;
 
-    if (recvfrom(sock, packetIn, BUFSIZE, 0, (struct sockaddr *)&client_addr,
-                 &sock_len) < 0) {
-        perror("client: Receive from server failed");
-    } else {
-        struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
-        parse_dns_response(packetIn, rr);
-        printf("%s", rr->rdata);
-        free(rr);
-    }
+    udp_receive(sock, &client_addr, packetIn);
+
+    struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
+    parse_dns_response(packetIn, rr);
+    printf("%s", rr->rdata);
+    free(rr->rdata);
+    free(rr);
 
     free(query->name);
     free(header);
