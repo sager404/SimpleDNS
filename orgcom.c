@@ -6,37 +6,28 @@
 int main(){
     int sock;
     int state=0;  //查到没有 
-    struct sockaddr_in localAddr; //本服务器
-    struct sockaddr_in serverAddr; //下一级服务器
+    struct sockaddr_in orgcomAddr; //本服务器
+    struct sockaddr_in localAddr; //下一级服务器
     unsigned int serAddrLen; //下一级服务器地址长度
-    char packetIn[BUFSIZE];
-	char packetOut[BUFSIZE];	
+    unsigned char packetIn[BUFSIZE];
+	unsigned char packetOut[BUFSIZE];	
     int recvMsgSize;
     int outMsgSize; 
 	char ipAddr[100];
 	//不需要分割名字，因为已经是最底层服务器，拿文件查询即可 
 
-    init_addr(&localAddr, TLD1_SERVER_IP);
+    init_addr(&orgcomAddr, TLD1_SERVER_IP);
     sock = tcp_socket();
-    server_bind(sock, &localAddr);
+    server_bind(sock, &orgcomAddr);
     tcp_listen(sock);
 
     while(1){
-    int client_sock = tcp_accept(sock, &serverAddr);
+    int client_sock = tcp_accept(sock, &localAddr);
     tcp_receive(client_sock, packetIn);
 
     //接受的结构体 
-	dns_query *recvQuery = (dns_query *)malloc(sizeof(dns_query));initQuery(recvQuery);
-	dns_header *recvHead = (dns_header *)malloc(sizeof(dns_header));initHead(recvHead);
-	dns_rr *recvrRecord = (dns_rr *)malloc(sizeof(dns_rr));initRR(recvrRecord);  
-	//回应的结构体 
-
-	dns_rr *resRecord = (dns_rr *)malloc(sizeof(dns_rr));initRR(resRecord);
-	//MX第二次查询ip
-	dns_query *mxQuery = (dns_query *)malloc(sizeof(dns_query));initQuery(mxQuery);
-	dns_header *mxHead = (dns_header *)malloc(sizeof(dns_header));initHead(mxHead);
-	dns_rr *mxRecord = (dns_rr *)malloc(sizeof(dns_rr));initRR(mxRecord);
-	
+	dns_query *recvQuery = (dns_query *)malloc(sizeof(dns_query));
+	dns_header *recvHead = (dns_header *)malloc(sizeof(dns_header));
 	
 	//解析
 	char *i = packetIn;
@@ -56,11 +47,10 @@ int main(){
 		unsigned int len_p = htons(cal_packet_len(packetOut+2));
 		resHead->flags=htons(FLAGS_RESPONSE);
 		memcpy(packetOut, &len_p, 2);
-		tcp_send(client_sock, packetOut, len_p+2);
+		tcp_send(client_sock, packetOut, ntohs(len_p)+2);
 	}
 	}   
 	close(sock);
-	
 }	
 
 
