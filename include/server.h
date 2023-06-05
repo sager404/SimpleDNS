@@ -17,7 +17,8 @@ void get_root_name(char *name, char *root);
 void get_second_name(char *rname, char *name);
 void get_third_name(char *rname, char *name);
 int parse_rr(char *packet, struct DNS_RR *rr);
-int get_local_cache(struct DNS_Query *query, struct DNS_RR *rr);
+int get_local_cache(char *packet, struct DNS_Query *query, short offset);
+void add_local_cache(char *packet, int ans_num);
 void gen_udp_packet(char *packet, int len);
 
 #endif

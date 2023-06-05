@@ -62,9 +62,12 @@ unsigned short parse_query_packet(char *packet, struct DNS_Header *header,
 void gen_response_packet(char *packet, struct DNS_Header *header,
                          short answerNum);
 short get_type(char *type);
+short get_type_name(short type, char *str);
 short add_rr(char *packet, struct DNS_RR *rr);
 void parse_name(char *rname, char *name);
 void serialize_name(char *rname, char *name);
+void serialize_ptr(char*data, char *ip);
+void parse_ptr(char *data, char *ip);
 short get_rname_length(unsigned char *rname);
 unsigned char *get_rname_domain(const unsigned char *rname, int level);
 uint16_t cal_packet_len(char *packet);
