@@ -24,18 +24,20 @@ int main() {
     // memset(packetIn, 0, sizeof(packetIn));
 
     printf("Input the domain:\n");
-    scanf("%s", qname);
+    scanf("%s %s", qname, qtype);
 
     unsigned short type = A;
-    // if (!strcmp(qtype, "A")) {
-    //     type = A;
-    // }else if (!strcmp(qtype, "MX")) {
-    //     type = MX;
-    // }else if (!strcmp(qtype, "NS")) {
-    //     type = NS;
-    // }else{
-    //     printf("Invalid type!");
-    // }
+    if (!strcmp(qtype, "A")) {
+        type = A;
+    }else if (!strcmp(qtype, "MX")) {
+        type = MX;
+    }else if (!strcmp(qtype, "CNAME")) {
+        type = CNAME;
+    }else if (!strcmp(qtype, "PTR")) {
+        type = PTR;
+    }else{
+        printf("Invalid type!");
+    }
 
     struct DNS_Header *header = malloc(sizeof(struct DNS_Header));
     struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
