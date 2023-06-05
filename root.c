@@ -42,10 +42,10 @@ int main() {
             int cnt = get_root_data(&RRs);
             unsigned short length = 0;
 
-            init_header(header, header->id, 0x0000,
-                      header->queryNum, 0, 1, 1);
             int ns_idx = find_ns(RRs, cnt, query);
             if (ns_idx != -1) {
+                init_header(header, header->id, 0x0000, header->queryNum, 0, 1,
+                            1);
                 int a_idx =
                     find_a_corresponding_ns(RRs, cnt, RRs[ns_idx].rdata);
                 if (a_idx == -1) {
@@ -58,6 +58,8 @@ int main() {
                 length += add_new_rr(buffer + 2 + length, RRs + a_idx);
                 *((unsigned short *)buffer) = htons(length);
             } else {
+                init_header(header, header->id, 0x0000, header->queryNum, 0, 0,
+                            0);
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_NAME_ERROR));
                 length += gen_response(buffer + 2, header, query);
                 *((unsigned short *)buffer) = htons(length);
