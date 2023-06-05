@@ -176,7 +176,7 @@ short add_rr(char *packet, struct DNS_RR *rr) {
     offset += sizeof(rr->length);
     int length = htons(rr->length);
     memcpy(packet + offset, rr->rdata, length);
-    offset += rr->length;
+    offset += length;
     return offset;
 }
 
@@ -288,7 +288,7 @@ uint16_t cal_packet_len(char *packet) {
         len += 2;
     }
 
-    return ++len;
+    return len;
 }
 
 void free_rr(struct DNS_RR *rr) {
