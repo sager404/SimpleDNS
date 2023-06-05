@@ -18,4 +18,12 @@
 #define DNS_MAX_LENGTH 1023
 
 
+unsigned int getHeader(char *q, dns_header *header);
+unsigned int getQuery(char *q, dns_query *query);
+int isequal(char *str1, char* str2);
+unsigned int rr2buf(char *o, dns_rr* rr);
+unsigned int query2buf(char *o, dns_query *query);
+unsigned int head2buf(char *o, dns_header *header);
+unsigned int add2buf(char *o, dns_rr* rr, dns_query* query);
+
 #endif

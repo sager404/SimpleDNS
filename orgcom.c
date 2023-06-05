@@ -55,7 +55,7 @@ int main(){
 	resQuery = recvQuery;
 	resRecord->name=recvQuery->name;
     resRecord->rclass=recvQuery->qclass;
-	resRecord->type=recvQuery->qtype;
+	resRecord->type=recvQuery->qtype=A;
 	resRecord->ttl = (uint32_t)86400;
 	resRecord->length = 4;
 	
@@ -168,7 +168,6 @@ int main(){
 	            mxRecord->rclass=recvQuery->qclass;
                 resHead->addNum = htons(1); 
 
-	    		//printf("recv->Query: %s\n",recvQuery->name);
 	    		//在结构体里把rdata赋值为 file_ip ,在head里把anwernum赋值为1，flag为8180 
 	    		state=1;   //表明查到 
 	    		break;

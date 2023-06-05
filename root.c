@@ -28,11 +28,10 @@ int main() {
         char buffer[BUFSIZE] = {0};
 
         ssize_t rlen = 0;
-        do {
-            rlen = tcp_receive(client_sock, buffer);
+        while (rlen = tcp_receive(client_sock, buffer)) {
             int header_len = deserialize_header(buffer + 2, header);
             deserialize_query(buffer + 2 + header_len, query);
-        } while (rlen);
+        }
 
         close(client_sock);
     }

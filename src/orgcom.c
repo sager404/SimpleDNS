@@ -90,98 +90,6 @@ unsigned int getQuery(char *q, dns_query *query){
 	return i+4+1; //补一个1的原因是网络的域名形式和转换后的差一位 
 }
 
-unsigned int getRRs(char *q, dns_rr *rRecord){
-	uint32_t ipAddr;
-	rRecord->ttl = ntohl(*(uint32_t*)(q)); 
-	char str[INET_ADDRSTRLEN];
-	struct in_addr addr;
-
-	q+=sizeof(rRecord->ttl);
-	rRecord->length = ntohs(*(uint16_t*)(q));
-
-	q+=sizeof(rRecord->length);
-	rRecord->rdata = (char*)malloc((rRecord->length)*sizeof(char));
-
-	if(rRecord->type == MX){
-		q += 2; //将Preferencre的长度空出去
-	}
-	
-	if(rRecord->type == A){
-		ipAddr = *(uint32_t*)(q);
-
-		memcpy(&addr, &ipAddr, 4);
-		char *ptr = inet_ntop(AF_INET, &addr, str, sizeof(str)); //转化为十进制点分值的IP地址
-
-		return 4 + 2 + rRecord->length;
-	}
-	else if(rRecord->type == CNAME){
-		char domainName[100];
-	memset(domainName, 0, 100);
-	char *d = domainName;
-
-	uint8_t count = 0;
-	int i = 0; 
-	//完成报文中数字加域名形式至点分值的转换
-
-	while(1){
-		if(*q!='\0'){
-			count = *(uint8_t*)(q);
-
-			q++;
-			while(count){
-
-				memcpy(&(domainName[i]), q, sizeof(char));
-
-				count--; q++; i++;
-			}
-			domainName[i] = '.'; //加点 
-			i++;
-		}
-		else{
-			domainName[i-1] = '\0'; //标注结束 
-			q++; 
-			break;
-		}
-	}
-
-	rRecord->rdata = (char*)malloc(i*sizeof(char));
-	memcpy(rRecord->rdata, domainName, i); //此时的i便为转换后变长字符串的长度了，经过了循环遍历 
-		return 4 + 2 + rRecord->length +1;
-	}
-	else if(rRecord->type == MX){
-		int firstlen = rRecord->length - 5;
-		char domainName[100];
-		memset(domainName, 0, 100);
-		char *d = domainName;
-		uint8_t count = 0;
-		int i = 0; 
-	//count = ntohs(*(uint8_t*)(q));
-	//完成报文中数字加域名形式至点分值的转换 
-		while(1){
-		if(*q!='\0'){
-			count = *(uint8_t*)(q);
-
-			q++;
-			while(count){
-				memcpy(&(domainName[i]), q, sizeof(char));
-				count--; q++; i++;
-			}
-			domainName[i] = '.'; //加点 
-			i++;
-			domainName[i] = '\0';
-			i++;
-			break;
-		}
-	}
-	strcpy(domainName, strcat(domainName, rRecord->name)); //由于压缩了指针，对两字符串进行拼接
-	int totalen = strlen(rRecord->name) + i; //拼接后总长度
-	rRecord->rdata = (char*)malloc(totalen*sizeof(char));
-	memcpy(rRecord->rdata, domainName, totalen); 
-		return 12+rRecord->length;
-	}
-	
-}
-
 unsigned int query2buf(char *o, dns_query *query){
 	char* ini = o; //for initial
 	uint8_t count = 0;
@@ -359,7 +267,6 @@ unsigned int add2buf(char *o, dns_rr* rr, dns_query* query) {
 	o+=2;
 
 	temp32=htonl(rr->ttl); //这里是htonl 32位数字的主机字节序转化 
-	//printf("ttlconvert: %d\n", temp32);
 	memcpy(o, &temp32, (2*sizeof(short)));
 	o+=4;
 
