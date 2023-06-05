@@ -83,7 +83,7 @@ int get_root_data(struct DNS_RR **RRs) {
         rr->length = strlen(rr->rdata) + 2;
 
         if (!strcmp(rclass, "IN")) {
-            rr->type = IN;
+            rr->rclass = IN;
         } else
             exit(EXIT_FAILURE);
 
