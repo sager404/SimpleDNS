@@ -1,11 +1,8 @@
-#include "socket.h"
 #include "orgcom.h"
-#include "server.h"
-#include "socket.h"
+
 
 int main(){
     int sock;
-    int state=0;  //查到没有 
     struct sockaddr_in orgcomAddr; //本服务器
     struct sockaddr_in localAddr; //下一级服务器
     unsigned int serAddrLen; //下一级服务器地址长度

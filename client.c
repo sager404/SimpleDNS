@@ -36,9 +36,7 @@ int main() {
         type = CNAME;
     } else if (!strcmp(qtype, "PTR")) {
         type = PTR;
-    } else {
-        printf("Invalid type!");
-    }
+    } 
 
     struct DNS_Header *header = malloc(sizeof(struct DNS_Header));
     struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
@@ -57,7 +55,7 @@ int main() {
     struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
     header = (struct DNS_Header *)packetIn;
     printf("DNS Response\n");
-    if (ntohs(header->flags) == FLAGS_RESPONSE) {
+    if (ntohs(header->flags) == FLAGS_NOTFOUND) {
         printf("Not found!\n");
     } else {
         parse_dns_response(packetIn, rr);
