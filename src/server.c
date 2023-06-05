@@ -76,12 +76,12 @@ int parse_rr(char *packet, struct DNS_RR *rr) {
     memcpy(&rr->type, packet + offset, sizeof(rr->type));
     offset += sizeof(rr->type);
     memcpy(&rr->rclass, packet + offset, sizeof(rr->rclass));
-    offset += sizeof(rr->name);
+    offset += sizeof(rr->rclass);
     memcpy(&rr->ttl, packet + offset, sizeof(rr->ttl));
     offset += sizeof(rr->ttl);
     memcpy(&rr->length, packet + offset, sizeof(rr->length));
     offset += sizeof(rr->length);
-    int length = htons(rr->length);
+    unsigned short length = ntohs(rr->length);
     rr->rdata = malloc(length);
     memcpy(rr->rdata, packet + offset, length);
     offset += length;
