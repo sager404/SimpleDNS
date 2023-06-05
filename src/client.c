@@ -52,10 +52,14 @@ void parse_dns_response(unsigned char *packet, struct DNS_RR *rr) {
         memcpy(&rr->length, packet + i, sizeof(rr->length));
         rr->length = ntohs(rr->length);
         i += sizeof(rr->length);
+
         if (rr->type == A) {
             rr->rdata = malloc(16);
             parse_addr(rr->rdata, packet + i);
-            return;
+        }else if (rr->type == PTR){
+            int len = get_rname_length(packet+i);
+            rr->rdata = malloc(len-1);
+            parse_name(packet+i, rr->rdata);
         }
         i += rr->length;
     }
