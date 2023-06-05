@@ -117,7 +117,7 @@ unsigned short gen_flags(unsigned char QR, unsigned char opcode,
            ((unsigned short)AA << 10) + (unsigned short)rcode;
 }
 
-void hton_header(struct DNS_Header *header, unsigned short id,
+void init_header(struct DNS_Header *header, unsigned short id,
                      unsigned short flags, unsigned short q_num,
                      unsigned short ans_num, unsigned short auth_num,
                      unsigned short add_num) {
@@ -141,8 +141,12 @@ int gen_response(unsigned char *buffer, struct DNS_Header *header,
     strcpy(buffer + size, rname);
     size += strlen(rname) + 1;
 
+    query->qtype = htons(query->qtype);
+    query->qclass = htons(query->qclass);
     memcpy(buffer + size, (unsigned char *)query + sizeof(unsigned char *),
            sizeof(struct DNS_Query) - sizeof(unsigned char *));
+    query->qtype = ntohs(query->qtype);
+    query->qclass = ntohs(query->qclass);
     size += sizeof(struct DNS_Query) - sizeof(unsigned char *);
 
     return size;

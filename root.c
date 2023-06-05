@@ -42,7 +42,7 @@ int main() {
             int cnt = get_root_data(&RRs);
             unsigned short length = 0;
 
-            hton_header(header, header->id, 0x0000,
+            init_header(header, header->id, 0x0000,
                       header->queryNum, 0, 1, 1);
             int ns_idx = find_ns(RRs, cnt, query);
             if (ns_idx != -1) {
