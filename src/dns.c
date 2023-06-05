@@ -96,9 +96,9 @@ unsigned short parse_query_packet(char *packet, struct DNS_Header *header,
         query->name = malloc(++len);
         memcpy(query->name, packet+start, len);
         offset++;
-        
+
     }
-    
+
     memcpy(&query->qtype, packet + offset, sizeof(query->qtype));
     offset += sizeof(query->qtype);
     memcpy(&query->qclass, packet + offset, sizeof(query->qclass));
@@ -195,6 +195,29 @@ short get_rname_length(unsigned char *rname) {
     return ++i;
 }
 
+unsigned char *get_rname_domain(const unsigned char *rname, int level) {
+    unsigned char *tmp =
+        (unsigned char *)malloc(strlen(rname) * sizeof(unsigned char));
+    strcpy(tmp, rname);
+
+    int lengths[DOMAIN_MAX_LEVEL] = {0};
+    unsigned char *domains[DOMAIN_MAX_LEVEL] = {NULL};
+    int l = 0;
+
+    for (int i = 0; tmp[i] != '\0'; i += tmp[i] + 1) {
+        lengths[l] = tmp[i] + 1;
+        domains[l] = tmp + i;
+        l++;
+    }
+
+    unsigned char *domain =
+        (unsigned char *)malloc((lengths[l - level] + 1) * sizeof(unsigned char));
+    memset(domain, 0, lengths[l - level] + 1);
+    memcpy(domain, domains[l - level], lengths[l - level] + 1);
+    free(tmp);
+    return domain;
+}
+
 uint16_t cal_packet_len(char *packet) {
     struct DNS_Header *header = (struct DNS_Header *)(packet);
     uint16_t len = sizeof(*header);
@@ -230,17 +253,4 @@ void free_rr(struct DNS_RR *rr) {
     free(rr->name);
     free(rr->rdata);
     free(rr);
-}
-
-void memory_dump(void *ptr, int len) {
-    int i;
-
-    for (i = 0; i < len; i++) {
-        if (i % 8 == 0 && i != 0)
-            printf(" ");
-        if (i % 16 == 0 && i != 0)
-            printf("\n");
-        printf("%02x ", *((uint8_t *)ptr + i));
-    }
-    printf("\n");
 }
