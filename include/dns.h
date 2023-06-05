@@ -25,6 +25,8 @@
 #define NAME_PTR 0xc0
 #define DOMAIN_MAX_LEVEL 16
 
+#pragma pack(1)
+
 typedef struct DNS_Header {
     unsigned short id;
     unsigned short flags;
@@ -39,6 +41,7 @@ typedef struct DNS_Query {
     unsigned short qtype;
     unsigned short qclass;
 } dns_query;
+
 typedef struct DNS_RR {
     unsigned char *name;
     unsigned short type;

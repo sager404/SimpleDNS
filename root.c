@@ -33,20 +33,17 @@ int main() {
         unsigned char buffer[BUFSIZE] = {0};
 
         ssize_t rlen = 0;
-        int header_len, query_len;
         while (rlen = tcp_receive(client_sock, buffer)) {
-            header_len = deserialize_header(buffer + 2, header);
-            query_len = deserialize_query(buffer + 2 + header_len, query);
+            int header_len = deserialize_header(buffer + 2, header);
+            deserialize_query(buffer + 2 + header_len, query);
 
             memset(buffer, 0, BUFSIZE);
-            int length = 2 + header_len + query_len;
             struct DNS_RR *RRs;
             int cnt = get_root_data(&RRs);
+            unsigned short length = 0;
 
-            header->answerNum = 0;
-            header->authorNum = htons(1);
-            header->addNum = htons(1);
-
+            hton_header(header, header->id, 0x0000,
+                      header->queryNum, 0, 1, 1);
             int ns_idx = find_ns(RRs, cnt, query);
             if (ns_idx != -1) {
                 int a_idx =
@@ -56,14 +53,16 @@ int main() {
                     exit(EXIT_FAILURE);
                 }
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_FINE));
-                gen_response(buffer, header, query);
-                length += add_new_rr(buffer + length, RRs + ns_idx);
-                length += add_new_rr(buffer + length, RRs + a_idx);
+                length += gen_response(buffer + 2, header, query);
+                length += add_new_rr(buffer + 2 + length, RRs + ns_idx);
+                length += add_new_rr(buffer + 2 + length, RRs + a_idx);
+                *((unsigned short *)buffer) = htons(length);
             } else {
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_NAME_ERROR));
-                gen_response(buffer, header, query);
+                length += gen_response(buffer + 2, header, query);
+                *((unsigned short *)buffer) = htons(length);
             }
-            tcp_send(client_sock, buffer, length);
+            tcp_send(client_sock, buffer, length + 2);
             break;
         }
         close(client_sock);
