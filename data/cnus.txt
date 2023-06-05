@@ -1,4 +1,4 @@
 edu.cn 86400 IN NS ns.edu.cn
 gov.us 86400 IN NS ns.gov.us
-ns.com 86400 IN A 127.1.2.1
-ns.cn 86100 IN A 127.1.2.2
+ns.edu.cn 86400 IN A 127.1.2.1
+ns.gov.us 86100 IN A 127.1.2.2
