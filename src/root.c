@@ -196,3 +196,54 @@ int add_new_rr(unsigned char *buffer, struct DNS_RR *rr) {
 
     return size;
 }
+
+int add_new_a_rr(unsigned char *buffer, struct DNS_RR *rr) {
+    int size = 0;
+
+    char *rname[NAME_MAX_LENGTH] = {0};
+    serialize_name(rname, rr->name);
+    strcpy(buffer, rname);
+    size += strlen(rname) + 1;
+
+    rr->type = htons(rr->type);
+    rr->rclass = htons(rr->rclass);
+    rr->ttl = htonl(rr->ttl);
+    rr->length = htons(4);
+    memcpy(buffer + size, (unsigned char *)rr + sizeof(unsigned char *),
+           sizeof(struct DNS_RR) - 2 * sizeof(unsigned char *));
+    rr->type = ntohs(rr->type);
+    rr->rclass = ntohs(rr->rclass);
+    rr->ttl = ntohl(rr->ttl);
+    rr->length = ntohs(4);
+    size += sizeof(struct DNS_RR) - 2 * sizeof(unsigned char *);
+
+    unsigned int ipBytes = htonl(str2ip(rr->rdata));
+    memcpy(buffer + size, &ipBytes, 4);
+    size += 4;
+
+    return size;
+}
+
+void split(char str[], char *strings[]) {
+    strings[0] = str;
+    int j = 1;
+    unsigned long len = strlen(str);
+    for (int i = 0; i < len; i++) {
+        if (str[i] == '.') {
+            str[i] = '\0';
+            strings[j] = str + (i + 1);
+            j++;
+        }
+    }
+}
+
+unsigned int str2ip(char ipString[]) {
+    char *strings[4];
+    split(ipString, strings);
+
+    unsigned int ip = 0;
+    for (int i = 0; i < 4; i++) {
+        ip += (unsigned int)atoi(strings[i]) << 8*(3 - i);
+    }
+    return ip;
+}

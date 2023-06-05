@@ -41,5 +41,8 @@ int find_ns(struct DNS_RR *RRs, int cnt, struct DNS_Query *query);
 int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt,
                             const unsigned char *ns_rdata);
 int add_new_rr(unsigned char *buffer, struct DNS_RR *rr);
+int add_new_a_rr(unsigned char *buffer, struct DNS_RR *rr);
+void split(char str[], char *strings[]);
+unsigned int str2ip(char ipString[]);
 
 #endif

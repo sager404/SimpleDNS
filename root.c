@@ -3,6 +3,7 @@
 #include "dns.h"
 #include "server.h"
 #include "socket.h"
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,8 +56,7 @@ int main() {
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_FINE));
                 length += gen_response(buffer + 2, header, query);
                 length += add_new_rr(buffer + 2 + length, RRs + ns_idx);
-                length += add_new_rr(buffer + 2 + length, RRs + a_idx);
-                *((unsigned short *)buffer) = htons(length);
+                length += add_new_a_rr(buffer + 2 + length, RRs + a_idx);
             } else {
                 init_header(header, header->id, 0x0000, header->queryNum, 0, 0,
                             0);
