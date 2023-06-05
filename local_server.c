@@ -27,19 +27,20 @@ int main() {
     udp_receive(sock, &client_addr, query_packet);
     struct DNS_Header *header = (struct DNS_Header *)query_packet;
     struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
-    struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
 
     short offset = parse_query_packet(query_packet, header, query);
+    short query_len = offset;
     char data[127] = {0};
-    if (get_local_cache(query, rr)) {
+    memcpy(packet, query_packet, BUFSIZE);
+    if (get_local_cache(packet, query, offset)) {
         printf("%s", query->name);
-        memcpy(packet, query_packet, BUFSIZE);
-        short len = add_rr(packet + offset, rr);
-        gen_response_packet(packet, header, 1);
-        udp_send(sock, &client_addr, packet, offset + len);
-        free(rr);
+        header = (struct DNS_Header *)packet;
+        header->flags = htons(FLAGS_RESPONSE);
+        // gen_response_packet(packet, header, 1);
+        unsigned short len = cal_packet_len(packet);
+        udp_send(sock, &client_addr, packet, len);
     } else {
-
+        struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
         gen_tcp_packet(query_packet, offset);
 
         tcp_sock = tcp_socket();
@@ -79,7 +80,9 @@ int main() {
 
                 int len = cal_packet_len(packet);
                 gen_udp_packet(packet, len);
-
+                header = (struct DNS_Header *)packet;
+                int ans_num = ntohs(header->answerNum)+ntohs(header->addNum);
+                add_local_cache(packet+query_len, ans_num);
                 udp_send(sock, &client_addr, packet, len);
                 break;
             }
