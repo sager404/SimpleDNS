@@ -25,5 +25,6 @@ unsigned int rr2buf(char *o, dns_rr* rr);
 unsigned int query2buf(char *o, dns_query *query);
 unsigned int head2buf(char *o, dns_header *header);
 unsigned int add2buf(char *o, dns_rr* rr, dns_query* query);
+int get_ORGCOM(char *packet, struct DNS_Query *query, short offset);
 
 #endif
