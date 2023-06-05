@@ -31,14 +31,15 @@ int get_root_data(struct DNS_RR **RRs);
 unsigned short random_us();
 unsigned short gen_flags(unsigned char QR, unsigned char opcode,
                          unsigned char AA, unsigned char rcode);
-void init_dns_header(struct DNS_Header *header, unsigned short id,
+void init_header(struct DNS_Header *header, unsigned short id,
                      unsigned short flags, unsigned short q_num,
                      unsigned short ans_num, unsigned short auth_num,
                      unsigned short add_num);
-void gen_response(unsigned char *buffer, struct DNS_Header *header,
-                  struct DNS_Query *query);
+int gen_response(unsigned char *buffer, struct DNS_Header *header,
+                 struct DNS_Query *query);
 int find_ns(struct DNS_RR *RRs, int cnt, struct DNS_Query *query);
-int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt, const unsigned char *ns_rdata);
+int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt,
+                            const unsigned char *ns_rdata);
 int add_new_rr(unsigned char *buffer, struct DNS_RR *rr);
 
 #endif

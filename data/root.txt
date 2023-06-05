@@ -1,4 +1,5 @@
-microsoft.com 86400 IN NS ns.microsoft.com
-ns.microsoft.com 86400 IN A 127.1.1.1
-ietf.org 86400 IN NS ns.ietf.org
-ns.ietf.org 86400 IN A 127.1.1.2
+microsoft.com 86400 IN NS ns.com
+ietf.org 86400 IN NS ns.com
+edu.cn 86100 IN NS ns.cn
+ns.com 86400 IN A 127.1.1.1
+ns.cn 86100 IN A 127.1.1.2

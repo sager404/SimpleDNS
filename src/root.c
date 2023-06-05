@@ -117,7 +117,7 @@ unsigned short gen_flags(unsigned char QR, unsigned char opcode,
            ((unsigned short)AA << 10) + (unsigned short)rcode;
 }
 
-void init_dns_header(struct DNS_Header *header, unsigned short id,
+void init_header(struct DNS_Header *header, unsigned short id,
                      unsigned short flags, unsigned short q_num,
                      unsigned short ans_num, unsigned short auth_num,
                      unsigned short add_num) {
@@ -129,12 +129,27 @@ void init_dns_header(struct DNS_Header *header, unsigned short id,
     header->addNum = htons(add_num);
 }
 
-void gen_response(unsigned char *buffer, struct DNS_Header *header,
+int gen_response(unsigned char *buffer, struct DNS_Header *header,
                   struct DNS_Query *query) {
+    int size = 0;
+
     memcpy(buffer, header, sizeof(struct DNS_Header));
-    strcpy(buffer + sizeof(struct DNS_Header), query->name);
-    memcpy(buffer + sizeof(struct DNS_Header) + strlen(query->name),
-           query + sizeof(char *), sizeof(struct DNS_Query) - sizeof(char *));
+    size += sizeof(struct DNS_Header);
+
+    unsigned char *rname[NAME_MAX_LENGTH] = {0};
+    serialize_name(rname, query->name);
+    strcpy(buffer + size, rname);
+    size += strlen(rname) + 1;
+
+    query->qtype = htons(query->qtype);
+    query->qclass = htons(query->qclass);
+    memcpy(buffer + size, (unsigned char *)query + sizeof(unsigned char *),
+           sizeof(struct DNS_Query) - sizeof(unsigned char *));
+    query->qtype = ntohs(query->qtype);
+    query->qclass = ntohs(query->qclass);
+    size += sizeof(struct DNS_Query) - sizeof(unsigned char *);
+
+    return size;
 }
 
 int find_ns(struct DNS_RR *RRs, int cnt, struct DNS_Query *query) {
@@ -155,14 +170,29 @@ int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt,
 }
 
 int add_new_rr(unsigned char *buffer, struct DNS_RR *rr) {
+    int size = 0;
+
     char *rname[NAME_MAX_LENGTH] = {0};
     serialize_name(rname, rr->name);
-
-    int size = 0;
-    memcpy(buffer, rname, strlen(rname) + 1);
+    strcpy(buffer, rname);
     size += strlen(rname) + 1;
-    memcpy(buffer + size, buffer + sizeof(unsigned char *),
+
+    rr->type = htons(rr->type);
+    rr->rclass = htons(rr->rclass);
+    rr->ttl = htonl(rr->ttl);
+    rr->length = htons(rr->length);
+    memcpy(buffer + size, (unsigned char *)rr + sizeof(unsigned char *),
            sizeof(struct DNS_RR) - 2 * sizeof(unsigned char *));
+    rr->type = ntohs(rr->type);
+    rr->rclass = ntohs(rr->rclass);
+    rr->ttl = ntohl(rr->ttl);
+    rr->length = ntohs(rr->length);
     size += sizeof(struct DNS_RR) - 2 * sizeof(unsigned char *);
+
+    memset(rname, 0, NAME_MAX_LENGTH);
+    serialize_name(rname, rr->rdata);
+    strcpy(buffer + size, rname);
+    size += strlen(rname) + 1;
+
     return size;
 }
