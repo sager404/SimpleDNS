@@ -57,6 +57,7 @@ int main() {
                 length += gen_response(buffer + 2, header, query);
                 length += add_new_rr(buffer + 2 + length, RRs + ns_idx);
                 length += add_new_a_rr(buffer + 2 + length, RRs + a_idx);
+                *((unsigned short *)buffer) = htons(length);
             } else {
                 init_header(header, header->id, 0x0000, header->queryNum, 0, 0,
                             0);
