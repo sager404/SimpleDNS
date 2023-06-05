@@ -57,15 +57,15 @@ void gen_ns_rr(struct DNS_RR *rr, const unsigned char *name) {
 
 void gen_a_rr() {}
 
-int get_root_data(struct DNS_RR *RRs) {
+int get_root_data(struct DNS_RR **RRs) {
     FILE *f = fopen("./data/root.txt", "r");
 
-    RRs = (struct DNS_RR *)malloc(ARRAY_CAPACITY * sizeof(struct DNS_RR));
-    memset(RRs, 0, ARRAY_CAPACITY * sizeof(struct DNS_RR));
+    *RRs = (struct DNS_RR *)malloc(ARRAY_CAPACITY * sizeof(struct DNS_RR));
+    memset(*RRs, 0, ARRAY_CAPACITY * sizeof(struct DNS_RR));
 
     int cnt;
     for (cnt = 0; !feof(f); cnt++) {
-        struct DNS_RR *rr = RRs + cnt;
+        struct DNS_RR *rr = *RRs + cnt;
         char rclass[8] = {0};
         char type[8] = {0};
         rr->name =
@@ -95,8 +95,8 @@ int get_root_data(struct DNS_RR *RRs) {
             exit(EXIT_FAILURE);
 
         if ((cnt + 1) % ARRAY_CAPACITY == 0) {
-            RRs = (struct DNS_RR *)realloc(RRs, (cnt + ARRAY_CAPACITY) *
-                                                    sizeof(struct DNS_RR));
+            *RRs = (struct DNS_RR *)realloc(*RRs,
+                                       (cnt + ARRAY_CAPACITY) * sizeof(struct DNS_RR));
             memset(RRs + cnt + 1, 0, ARRAY_CAPACITY * sizeof(struct DNS_RR));
         }
     }
@@ -145,7 +145,8 @@ int find_ns(struct DNS_RR *RRs, int cnt, struct DNS_Query *query) {
     return -1;
 }
 
-int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt, const unsigned char *ns_rdata) {
+int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt,
+                            const unsigned char *ns_rdata) {
     for (int i = 0; i < cnt; i++) {
         if (RRs[i].type == A && !strcmp(RRs[i].name, ns_rdata))
             return i;

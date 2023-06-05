@@ -30,7 +30,7 @@ int main() {
 
     while (1) {
         int client_sock = tcp_accept(sock, &client_addr);
-        char buffer[BUFSIZE] = {0};
+        unsigned char buffer[BUFSIZE] = {0};
 
         ssize_t rlen = 0;
         int header_len, query_len;
@@ -41,7 +41,7 @@ int main() {
             memset(buffer, 0, BUFSIZE);
             int length = 2 + header_len + query_len;
             struct DNS_RR *RRs;
-            int cnt = get_root_data(RRs);
+            int cnt = get_root_data(&RRs);
 
             header->answerNum = 0;
             header->authorNum = htons(1);
@@ -64,8 +64,10 @@ int main() {
                 gen_response(buffer, header, query);
             }
             tcp_send(client_sock, buffer, length);
+            break;
         }
         close(client_sock);
     }
+
     close(sock);
 }

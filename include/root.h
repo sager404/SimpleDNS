@@ -27,7 +27,7 @@
 int deserialize_header(char *buffer, struct DNS_Header *header);
 int deserialize_query(char *buffer, struct DNS_Query *query);
 void gen_ns_rr(struct DNS_RR *rr, const unsigned char *name);
-int get_root_data(struct DNS_RR *RRs);
+int get_root_data(struct DNS_RR **RRs);
 unsigned short random_us();
 unsigned short gen_flags(unsigned char QR, unsigned char opcode,
                          unsigned char AA, unsigned char rcode);
