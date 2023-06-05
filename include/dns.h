@@ -16,7 +16,7 @@
 #define PTR 12
 
 #define IN 1
-#define DNS_PORT 53000
+#define DNS_PORT 53
 #define SENDER_PORT 54000
 #define FLAGS_QUERY 0x0000
 #define FLAGS_RESPONSE 0x8000
