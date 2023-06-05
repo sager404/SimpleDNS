@@ -57,8 +57,8 @@ int main() {
                 }
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_FINE));
                 gen_response(buffer, header, query);
-                length += add_rr(buffer + length, RRs + ns_idx);
-                length += add_rr(buffer + length, RRs + a_idx);
+                length += add_new_rr(buffer + length, RRs + ns_idx);
+                length += add_new_rr(buffer + length, RRs + a_idx);
             } else {
                 header->flags = htons(gen_flags(1, OP_STD, 1, R_NAME_ERROR));
                 gen_response(buffer, header, query);
@@ -68,6 +68,5 @@ int main() {
         }
         close(client_sock);
     }
-
     close(sock);
 }
