@@ -2,6 +2,7 @@
 #include "dns.h"
 #include "server.h"
 #include "socket.h"
+#include <netinet/in.h>
 
 int main() {
     struct sockaddr_in client_addr;
@@ -29,13 +30,13 @@ int main() {
     unsigned short type = A;
     if (!strcmp(qtype, "A")) {
         type = A;
-    }else if (!strcmp(qtype, "MX")) {
+    } else if (!strcmp(qtype, "MX")) {
         type = MX;
-    }else if (!strcmp(qtype, "CNAME")) {
+    } else if (!strcmp(qtype, "CNAME")) {
         type = CNAME;
-    }else if (!strcmp(qtype, "PTR")) {
+    } else if (!strcmp(qtype, "PTR")) {
         type = PTR;
-    }else{
+    } else {
         printf("Invalid type!");
     }
 
@@ -45,20 +46,27 @@ int main() {
     gen_dns_header(header, FLAGS_QUERY, 1, 0);
     gen_dns_query(query, qname, type);
     int len = gen_client_query_packet(packetOut, header, query);
-
+    free(query->name);
+    free(header);
+    free(query);
     udp_send(sock, &local_server_addr, packetOut, len);
     unsigned int sock_len = 0;
 
     udp_receive(sock, &client_addr, packetIn);
 
     struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
-    parse_dns_response(packetIn, rr);
-    printf("%s", rr->rdata);
-    free(rr->rdata);
+    header = (struct DNS_Header *)packetIn;
+    printf("DNS Response\n");
+    if (ntohs(header->flags) == FLAGS_RESPONSE) {
+        printf("Not found!\n");
+    } else {
+        parse_dns_response(packetIn, rr);
+        
+        printf("Address: %s\n", rr->rdata);
+        free(rr->rdata);
+    }
     free(rr);
 
-    free(query->name);
-    free(header);
-    free(query);
+
     close(sock);
 }

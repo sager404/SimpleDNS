@@ -24,10 +24,10 @@
 #define R_NAME_ERROR 3
 #define R_TYPE_ERROR 4
 
-int deserialize_header(char *buffer, struct DNS_Header *header);
-int deserialize_query(char *buffer, struct DNS_Query *query);
+int deserialize_header(unsigned char *buffer, struct DNS_Header *header);
+int deserialize_query(unsigned char *buffer, struct DNS_Query *query);
 void gen_ns_rr(struct DNS_RR *rr, const unsigned char *name);
-int get_root_data(struct DNS_RR *RRs);
+int get_root_data(struct DNS_RR **RRs);
 unsigned short random_us();
 unsigned short gen_flags(unsigned char QR, unsigned char opcode,
                          unsigned char AA, unsigned char rcode);
@@ -35,9 +35,10 @@ void init_dns_header(struct DNS_Header *header, unsigned short id,
                      unsigned short flags, unsigned short q_num,
                      unsigned short ans_num, unsigned short auth_num,
                      unsigned short add_num);
-void gen_response(char *buffer, struct DNS_Header *header,
+void gen_response(unsigned char *buffer, struct DNS_Header *header,
                   struct DNS_Query *query);
 int find_ns(struct DNS_RR *RRs, int cnt, struct DNS_Query *query);
 int find_a_corresponding_ns(struct DNS_RR *RRs, int cnt, const unsigned char *ns_rdata);
+int add_new_rr(unsigned char *buffer, struct DNS_RR *rr);
 
 #endif

@@ -71,7 +71,7 @@ int main() {
 
                 char ns_addr[16] = {0};
                 parse_addr(ns_addr, rr->rdata);
-                struct sockaddr_in ns;
+                struct sockaddr_in ns = {0};
                 init_addr(&ns, ns_addr);
                 tcp_connect(tcp_sock, &ns);
                 tcp_send(tcp_sock, query_packet, offset);
