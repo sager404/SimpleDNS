@@ -1,6 +1,9 @@
 #include "root.h"
 #include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "client.h"
 #include "dns.h"
 #include "server.h"
@@ -20,8 +23,8 @@ int main() {
     server_bind(sock, &root_addr);
     tcp_listen(sock);
 
-    struct DNS_Header *header = malloc(sizeof(struct DNS_Header));
-    struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
+    struct DNS_Header *header = (struct DNS_Header *)malloc(sizeof(struct DNS_Header));
+    struct DNS_Query *query = (struct DNS_Query *)malloc(sizeof(struct DNS_Query));
 
     while (1) {
         int client_sock = tcp_accept(sock, &client_addr);
@@ -31,6 +34,30 @@ int main() {
         while (rlen = tcp_receive(client_sock, buffer)) {
             int header_len = deserialize_header(buffer + 2, header);
             deserialize_query(buffer + 2 + header_len, query);
+        }
+        memset(buffer, 0, BUFSIZE);
+
+        struct DNS_RR *RRs;
+        int cnt = get_root_data(RRs);
+
+        header->answerNum = 0;
+        header->authorNum = htons(1);
+        header->addNum = htons(1);
+
+        int ns_idx = find_ns(RRs, cnt, query);
+        if (ns_idx != -1) {
+            int a_idx = find_a_corresponding_ns(RRs, cnt, RRs[ns_idx].rdata);
+            if (a_idx == -1) {
+                perror("Database error!");
+                exit(EXIT_FAILURE);
+            }
+            header->flags = htons(gen_flags(1, OP_STD, 1, R_FINE));
+            gen_response(buffer, header, query);
+            add_rr(buffer, RRs + ns_idx);
+            add_rr(buffer, RRs + a_idx);
+        } else {
+            header->flags = htons(gen_flags(1, OP_STD, 1, R_NAME_ERROR));
+            gen_response(buffer, header, query);
         }
 
         close(client_sock);
