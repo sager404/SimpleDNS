@@ -42,7 +42,7 @@ int main(){
 	//解析
 	char *i = packetIn;
 	int header_len = deserialize_header(i + 2, recvHead);
-    deserialize_query(i + 2 + header_len, recvQuery); 	
+    int query_len = deserialize_query(i + 2 + header_len, recvQuery); 	
 	printf("The domain name is: %s\n", recvQuery->name);
 	
 	//以下为回应的部分
@@ -55,151 +55,22 @@ int main(){
 	resQuery = recvQuery;
 	resRecord->name=recvQuery->name;
     resRecord->rclass=recvQuery->qclass;
-	resRecord->type=recvQuery->qtype=A;
+	resRecord->type=recvQuery->qtype;
 	resRecord->ttl = (uint32_t)86400;
 	resRecord->length = 4;
 	
 	/*
 	 *返回查询结果 
 	 */
-	 if(recvQuery->qtype==A) {
-	   freopen("orgcomA.txt", "r", stdin);
-	   char file_name[255],file_ttl[255],file_class[255],file_type[255],file_ip[255];
-	    while(scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_ip)){
-	    	if(isequal(recvQuery->name,file_name)){
-	    		printf("file_name: %s\n",file_name);
-	    		printf("file_name length: %d\n",strlen(file_name));
-	    		printf("file_ttl: %s\n",file_ttl);
-	    		printf("file_class: %s\n",file_class);
-	    		printf("file_type: %s\n",file_type);
-	    		printf("file_ip: %s\n",file_ip);
-
-				resRecord->name = (char*)malloc((strlen(file_name)+1)*sizeof(char));
-				strcpy(resRecord->name, file_name);
-				resRecord->ttl = (uint32_t)(atoi(file_ttl));
-				resRecord->rdata = (char*)malloc((strlen(file_ip)+1)*sizeof(char));
-				strcpy(resRecord->rdata, file_ip);
-				resHead->answerNum = htons(1);
-				resRecord->length=strlen(resRecord->rdata)+1;
-				resHead->flags = htons(0x8180);
-
-	    		//在结构体里把rdata赋值为 file_ip ,在head里把anwernum赋值为1，flag为8180 
-	    		state=1;   //表明查到 
-	    		break;
-			}
-		}   
+	memcpy(packetOut,packetIn,BUFSIZE);
+	if(get_ORGCOM(packetOut, recvQuery, 14+query_len)){
+		unsigned int len_p = htons(cal_packet_len(packetOut+2));
+		struct DNS_Header *header = (struct DNS_Header *)(packetOut+2);
+		header->flags=htons(FLAGS_RESPONSE);
+		memcpy(packetOut, &len_p, 2);
+		tcp_send(client_sock, packetOut, len_p+2);
 	}
-	else if(recvQuery->qtype==CNAME){
-		freopen("orgcomC.txt", "r", stdin);
-	   char file_name[255],file_ttl[255],file_class[255],file_type[255],file_addr[255];
-	    while(~scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_addr)){
-	    	if(isequal(recvQuery->name,file_name)){
-	    		printf("file_name: %s\n",file_name);
-	    		printf("file_name length: %d\n",strlen(file_name));
-	    		printf("file_ttl: %s\n",file_ttl);
-	    		printf("file_class: %s\n",file_class);
-	    		printf("file_type: %s\n",file_type);
-	    		printf("file_ip: %s\n",file_addr);
-
-				resRecord->name = (char*)malloc((strlen(file_name)+1)*sizeof(char));
-				strcpy(resRecord->name, file_name);
-				resRecord->ttl = (uint32_t)(atoi(file_ttl));
-				resRecord->rdata = (char*)malloc((strlen(file_addr)+1)*sizeof(char));
-				strcpy(resRecord->rdata, file_addr);
-				resHead->answerNum = htons(1);
-				resRecord->length=strlen(resRecord->rdata)+1;
-				resHead->flags = htons(0x8180);
-	    		//在结构体里把rdata赋值为 file_ip ,在head里把anwernum赋值为1，flag为8180 
-	    		state=1;   //表明查到 
-	    		break;
-			}
-		}   
-	}
-	else if(recvQuery->qtype==MX){
-		freopen("orgcomM.txt", "r", stdin);
-	    char file_name[255],file_ttl[255],file_class[255],file_type[255],file_addr[255];
-	    while(~scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_addr)){
-
-	    	if(isequal(recvQuery->name,file_name)){
-	    		printf("file_name: %s\n",file_name);
-	    		printf("file_name length: %d\n",strlen(file_name));
-	    		printf("file_ttl: %s\n",file_ttl);
-	    		printf("file_class: %s\n",file_class);
-	    		printf("file_type: %s\n",file_type);
-	    		printf("file_addr: %s\n",file_addr);
-
-				resRecord->name = (char*)malloc((strlen(file_name)+1)*sizeof(char));
-				strcpy(resRecord->name, file_name);
-				resRecord->ttl = (uint32_t)(atoi(file_ttl));
-				resRecord->rdata = (char*)malloc((strlen(file_addr)+1)*sizeof(char));
-				strcpy(resRecord->rdata, file_addr);
-				resHead->answerNum = htons(1);
-				//这里用现在的域名减去查询的名字长度再+2(pre..)+2(压缩指针)
-		        resRecord->length = strlen(resRecord->rdata)-strlen(recvQuery->name) + 4;
-				resHead->flags = htons(0x8180);
-
-	    		//在结构体里把rdata赋值为 file_ip ,在head里把anwernum赋值为1，flag为8180 
-	    		state=1;   //表明查到 
-	    		break;
-			}
-		} 
-	    if(state==1){
-		mxQuery->name = (char*)malloc((strlen(resRecord->rdata)+1)*sizeof(char));
-		strcpy(mxQuery->name, resRecord->rdata);
-		mxQuery->qclass = recvQuery->qclass;
-		mxQuery->qtype = A; //这里要用上一次的结果A方式查询一下
-		freopen("comorgA.txt", "r", stdin);
-	    char file_ip[255];
-	    while(~scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_ip)){
-	    	if(isequal(mxQuery->name,file_name)){
-	    		printf("file_name: %s\n",file_name);
-	    		printf("file_name length: %d\n",strlen(file_name));
-	    		printf("file_ttl: %s\n",file_ttl);
-	    		printf("file_class: %s\n",file_class);
-	    		printf("file_type: %s\n",file_type);
-	    		printf("file_ip: %s\n",file_ip);
-		    	mxRecord->name = (char*)malloc((strlen(file_name)+1)*sizeof(char));
-				strcpy(mxRecord->name, file_name);
-				mxRecord->ttl = (uint32_t)(atoi(file_ttl));
-				mxRecord->rdata = (char*)malloc((strlen(file_addr)+1)*sizeof(char));
-				strcpy(mxRecord->rdata, file_ip);
-				mxRecord->length=4;
-				mxRecord->type=A; 
-	            mxRecord->rclass=recvQuery->qclass;
-                resHead->addNum = htons(1); 
-
-	    		//在结构体里把rdata赋值为 file_ip ,在head里把anwernum赋值为1，flag为8180 
-	    		state=1;   //表明查到 
-	    		break;
-			}
-		    }
-	    }
-	}	  
-	char* o = packetOut;
-	//查不到的情况
-	if(state==0){
-		resHead->flags =htons(0x8183);
-		resHead->answerNum = 0;
-		o = packetOut+2; 
-	 	o += head2buf(o, resHead);
-	 	o += query2buf(o,resQuery);
-		//在结构体里把rdata赋值为找不到 ,在head里把anwernum赋值为 1，flag为8183 
-	}else{
-		o = packetOut+2;
-	 	o += head2buf(o, resHead);
-	 	o += query2buf(o,resQuery); 
-	 	o += rr2buf(o,resRecord);
-	 	if(recvQuery->qtype == MX)
-	 	o+=add2buf(o, mxRecord, recvQuery);
-	}
-
-
-	//统一返回
-	//把packetOut赋值
-	unsigned int len_p = htons(cal_packet_len(packetOut+2));
-	memcpy(packetOut, &len_p, 2);
-	tcp_send(client_sock, packetOut, len_p+2);
-    }
+	}   
 }	
 
 
