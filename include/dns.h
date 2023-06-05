@@ -25,7 +25,7 @@
 #define NAME_PTR 0xc0
 #define DOMAIN_MAX_LEVEL 16
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 typedef struct DNS_Header {
     unsigned short id;
@@ -50,6 +50,8 @@ typedef struct DNS_RR {
     unsigned short length;
     unsigned char *rdata;
 } dns_rr;
+
+#pragma pack(pop)
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void init_sender_addr(struct sockaddr_in *sockaddr, const char *addr);

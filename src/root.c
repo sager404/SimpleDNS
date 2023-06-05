@@ -55,8 +55,6 @@ void gen_ns_rr(struct DNS_RR *rr, const unsigned char *name) {
     rr->ttl = 86400;
 }
 
-void gen_a_rr() {}
-
 int get_root_data(struct DNS_RR **RRs) {
     FILE *f = fopen("./data/root.txt", "r");
 

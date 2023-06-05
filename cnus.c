@@ -3,6 +3,7 @@
 #include "dns.h"
 #include "server.h"
 #include "socket.h"
+#include "cnus.h"
 
 int main() {
     char qname[127] = {0};
@@ -11,11 +12,11 @@ int main() {
     char packetIn[BUFSIZE] = {0};
 
     struct sockaddr_in client_addr;
-    struct sockaddr_in root_addr;
-    init_addr(&root_addr, ROOT_SERVER_IP);
+    struct sockaddr_in tld2_addr;
+    init_addr(&tld2_addr, TLD2_SERVER_IP);
 
     int sock = tcp_socket();
-    server_bind(sock, &root_addr);
+    server_bind(sock, &tld2_addr);
     tcp_listen(sock);
 
     struct DNS_Header *header =
@@ -34,7 +35,7 @@ int main() {
 
             memset(buffer, 0, BUFSIZE);
             struct DNS_RR *RRs;
-            int cnt = get_root_data(&RRs);
+            int cnt = get_cnus_data(&RRs);
             unsigned short length = 0;
 
             int ns_idx = find_ns(RRs, cnt, query);
