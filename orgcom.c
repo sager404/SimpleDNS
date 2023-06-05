@@ -9,8 +9,8 @@ int main(){
     struct sockaddr_in localAddr; //本服务器
     struct sockaddr_in serverAddr; //下一级服务器
     unsigned int serAddrLen; //下一级服务器地址长度
-    char packetOut[BUFSIZE];
     char packetIn[BUFSIZE];
+	char packetOut[BUFSIZE];	
     int recvMsgSize;
     int outMsgSize; 
 	char ipAddr[100];
@@ -41,8 +41,8 @@ int main(){
 	
 	//解析
 	char *i = packetIn;
-	i += getHeader(i, recvHead);
-	i += getQuery(i, recvQuery); 	
+	int header_len = deserialize_header(i + 2, recvHead);
+    deserialize_query(i + 2 + header_len, recvQuery); 	
 	printf("The domain name is: %s\n", recvQuery->name);
 	
 	//以下为回应的部分
@@ -65,7 +65,7 @@ int main(){
 	 if(recvQuery->qtype==A) {
 	   freopen("orgcomA.txt", "r", stdin);
 	   char file_name[255],file_ttl[255],file_class[255],file_type[255],file_ip[255];
-	    while(~scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_ip)){
+	    while(scanf("%s%s%s%s%s", file_name, file_ttl, file_class,file_type,file_ip)){
 	    	if(isequal(recvQuery->name,file_name)){
 	    		printf("file_name: %s\n",file_name);
 	    		printf("file_name length: %d\n",strlen(file_name));
@@ -175,17 +175,17 @@ int main(){
 		    }
 	    }
 	}	  
-	char* o=packetOut;
+	char* o = packetOut;
 	//查不到的情况
 	if(state==0){
 		resHead->flags =htons(0x8183);
 		resHead->answerNum = 0;
-		o = packetOut; 
+		o = packetOut+2; 
 	 	o += head2buf(o, resHead);
 	 	o += query2buf(o,resQuery);
 		//在结构体里把rdata赋值为找不到 ,在head里把anwernum赋值为 1，flag为8183 
 	}else{
-		o = packetOut; 
+		o = packetOut+2;
 	 	o += head2buf(o, resHead);
 	 	o += query2buf(o,resQuery); 
 	 	o += rr2buf(o,resRecord);
@@ -195,9 +195,10 @@ int main(){
 
 
 	//统一返回
-	//把packetOut赋值 
-	outMsgSize = o - packetOut + 1;
-	tcp_send(client_sock, packetOut, outMsgSize);
+	//把packetOut赋值
+	unsigned int len_p = htons(cal_packet_len(packetOut+2));
+	memcpy(packetOut, &len_p, 2);
+	tcp_send(client_sock, packetOut, len_p+2);
     }
 }	
 
