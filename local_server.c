@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
 int main() {
@@ -44,7 +45,7 @@ int main() {
         header->flags = htons(FLAGS_NOTFOUND);
         udp_send(sock, &client_addr, packet, offset);
     } else {
-        
+
         gen_tcp_packet(query_packet, offset);
         offset += 2;
         tcp_sock = tcp_socket();
@@ -52,8 +53,10 @@ int main() {
         tcp_connect(tcp_sock, &root_server_addr);
         tcp_send(tcp_sock, query_packet, offset);
 
+        struct timespec start_time, end_time;
         while (1) {
             memset(packet, 0, BUFSIZE);
+            clock_gettime(CLOCK_MONOTONIC, &start_time);
 
             tcp_receive(tcp_sock, packet);
             header = (struct DNS_Header *)(packet + 2);
@@ -82,7 +85,7 @@ int main() {
                 struct sockaddr_in ns = {0};
                 init_addr(&ns, ns_addr);
                 tcp_connect(tcp_sock, &ns);
-                tcp_send(tcp_sock, query_packet, query_len+2);
+                tcp_send(tcp_sock, query_packet, query_len + 2);
                 free_rr(rr);
 
             } else {
@@ -96,6 +99,12 @@ int main() {
                 free(rr);
                 break;
             }
+
+            clock_gettime(CLOCK_MONOTONIC, &end_time);
+            double ms = \
+                ((end_time.tv_sec - start_time.tv_sec) * 1e9 +
+                (end_time.tv_nsec - start_time.tv_nsec)) / 1e-6;
+            printf("Query time: %.2f ", ms);
         }
     }
     close(sock);
