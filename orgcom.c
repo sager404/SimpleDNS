@@ -11,6 +11,7 @@ int main(){
     int recvMsgSize;
     int outMsgSize; 
 	char ipAddr[100];
+	char* file = "orgcom.txt";
 	//不需要分割名字，因为已经是最底层服务器，拿文件查询即可 
 
     init_addr(&orgcomAddr, TLD1_SERVER_IP);
@@ -40,7 +41,7 @@ int main(){
 	dns_query *resQuery = (dns_query *)malloc(sizeof(dns_query));
 	dns_header *resHead = (struct DNS_Header *)(packetOut+2);
 	int len = parse_query_packet(packetOut+2,resHead,resQuery);
-	if(get_ORGCOM(packetOut+2, resQuery, len)){
+	if(load_data(packetOut+2, resQuery, &len, file)){
 		unsigned int len_p = htons(cal_packet_len(packetOut+2));
 		resHead->flags=htons(FLAGS_RESPONSE);
 		memcpy(packetOut, &len_p, 2);
