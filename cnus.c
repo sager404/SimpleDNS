@@ -1,9 +1,9 @@
-#include "root.h"
+#include "cnus.h"
 #include "client.h"
 #include "dns.h"
+#include "root.h"
 #include "server.h"
 #include "socket.h"
-#include "cnus.h"
 
 int main() {
     char qname[127] = {0};
@@ -61,6 +61,13 @@ int main() {
                 *((unsigned short *)buffer) = htons(length);
             }
             tcp_send(client_sock, buffer, length + 2);
+            struct Trace trace = {0};
+            trace.send_ip = inet_addr(SCD1_SERVER_IP);
+            trace.send_port = htons(DNS_PORT);
+            trace.recv_ip = inet_addr(LOCAL_SERVER_IP);
+            trace.recv_port = htons(SENDER_PORT);
+            print_trace(&trace);
+            close(client_sock);
             break;
         }
         close(client_sock);

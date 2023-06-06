@@ -3,6 +3,7 @@
 #include "server.h"
 #include "socket.h"
 #include <netinet/in.h>
+#include <stdlib.h>
 #include <time.h>
 
 int main(int argc, char *argv[]) {
@@ -22,12 +23,13 @@ int main(int argc, char *argv[]) {
     }
 
     int sock = udp_socket();
+    int trace_sock = udp_socket();
 
     char *qname = argv[1];
     char *qtype = argv[2];
 
-    char packetOut[BUFSIZE] = {0};
-    char packetIn[BUFSIZE] = {0};
+    unsigned char packetOut[BUFSIZE] = {0};
+    unsigned char packetIn[BUFSIZE] = {0};
     // memset(packetOut, 0, sizeof(packetOut));
     // memset(packetIn, 0, sizeof(packetIn));
 
@@ -43,6 +45,8 @@ int main(int argc, char *argv[]) {
     }
     struct timespec start_time, end_time;
     clock_gettime(CLOCK_MONOTONIC, &start_time);
+    FILE *fp = fopen("./data/trace.txt", "w+");
+    fclose(fp);
 
     struct DNS_Header *header = malloc(sizeof(struct DNS_Header));
     struct DNS_Query *query = malloc(sizeof(struct DNS_Query));
@@ -50,21 +54,20 @@ int main(int argc, char *argv[]) {
     gen_dns_header(header, FLAGS_QUERY, 1, 0);
     gen_dns_query(query, qname, type);
     int len = gen_client_query_packet(packetOut, header, query);
-    free(query->name);
+
     free(header);
-    free(query);
+
     udp_send(sock, &local_server_addr, packetOut, len);
+
     unsigned int sock_len = 0;
-    int i = 1;
+    int i = 2;
     while (1) {
         udp_receive(sock, &client_addr, packetIn);
         if (packetIn[0] == 0xff) {
-            char addr[16] = {0};
-            parse_addr(addr, packetIn+2);
-            printf("hop %d: %s\n", i, addr);
-            i++;
+            // struct Trace trace ={0};
+            // parse_trace_packet(packetIn, &trace, &i);
         } else {
-            struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
+            
             header = (struct DNS_Header *)packetIn;
             printf("********** DNS Response **********\n");
             clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -74,16 +77,18 @@ int main(int argc, char *argv[]) {
             if (ntohs(header->flags) == FLAGS_NOTFOUND) {
                 printf("Not found!\n");
             } else {
-                parse_dns_response(packetIn, rr);
 
-                printf("*Address:\t %s\n", rr->rdata);
+                struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
+                parse_dns_response(packetIn, rr);
                 free(rr->rdata);
+                free(rr);
             }
             printf("**********************************\n");
-            free(rr);
+            
             break;
         }
     }
-
+    free(query->name);
+    free(query);
     close(sock);
 }

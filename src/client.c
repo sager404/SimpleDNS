@@ -1,6 +1,7 @@
 #include "client.h"
 #include "dns.h"
 #include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 int gen_client_query_packet(char *packet, struct DNS_Header *header,
@@ -28,7 +29,6 @@ void parse_dns_response(unsigned char *packet, struct DNS_RR *rr) {
     short num = ntohs(header->answerNum) + ntohs(header->addNum);
     for (int n = 0; n < queryNum; n++) {
         i += get_rname_length(packet + i);
-
         i += 4;
     }
 
@@ -56,10 +56,12 @@ void parse_dns_response(unsigned char *packet, struct DNS_RR *rr) {
         if (rr->type == A) {
             rr->rdata = malloc(16);
             parse_addr(rr->rdata, packet + i);
-        }else if (rr->type == PTR || rr->type == CNAME){
-            int len = get_rname_length(packet+i);
-            rr->rdata = malloc(len-1);
-            parse_name(packet+i, rr->rdata);
+            printf("*Response data:\t %s\n", rr->rdata);
+        } else if (rr->type == PTR || rr->type == CNAME) {
+            int len = get_rname_length(packet + i);
+            rr->rdata = malloc(len - 1);
+            parse_name(packet + i, rr->rdata);
+            printf("*Response data:\t %s\n", rr->rdata);
         }
         i += rr->length;
     }

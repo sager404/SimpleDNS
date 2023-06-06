@@ -18,6 +18,7 @@
 #define IN 1
 #define DNS_PORT 53
 #define SENDER_PORT 54000
+#define TRACER_PORT 54002
 #define FLAGS_QUERY 0x0000
 #define FLAGS_RESPONSE 0x8000
 #define FLAGS_NOTFOUND 0x8003
@@ -51,10 +52,18 @@ typedef struct DNS_RR {
     unsigned char *rdata;
 } dns_rr;
 
+typedef struct Trace{
+    unsigned int send_ip;
+    unsigned short send_port;
+    unsigned int recv_ip;
+    unsigned short recv_port;
+} trace;
+
 #pragma pack(pop)
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr);
 void init_sender_addr(struct sockaddr_in *sockaddr, const char *addr);
+void init_tracer_addr(struct sockaddr_in *sockaddr, const char *addr);
 void parse_addr(char *addr, char *rdata);
 void serialize_addr(char *addr, char **rdata);
 void gen_dns_header(struct DNS_Header *header, short flags, short qdcount,

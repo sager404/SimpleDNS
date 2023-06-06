@@ -1,4 +1,7 @@
-#include "gov.h"
+#include "dns.h"
+#include "root.h"
+#include "server.h"
+#include "socket.h"
 
 int main() {
     int sock;
@@ -51,6 +54,13 @@ int main() {
             resHead->flags = htons(FLAGS_NOTFOUND);
             tcp_send(client_sock, packetOut, q_len + 2);
         }
+        struct Trace trace = {0};
+        trace.send_ip = inet_addr(SCD1_SERVER_IP);
+        trace.send_port = htons(DNS_PORT);
+        trace.recv_ip = inet_addr(LOCAL_SERVER_IP);
+        trace.recv_port = htons(SENDER_PORT);
+        print_trace(&trace);
+        close(client_sock);
         close(client_sock);
     }
     close(sock);

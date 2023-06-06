@@ -22,5 +22,6 @@ void add_local_cache(char *packet, int ans_num);
 int load_data(char *packet, struct DNS_Query *query, short *offset,
               const char *file);
 void gen_udp_packet(char *packet, int len);
+void print_trace(struct Trace *trace);
 
 #endif

@@ -1,6 +1,7 @@
 #include "server.h"
 #include "dns.h"
 #include "socket.h"
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -235,7 +236,59 @@ void add_local_cache(char *packet, int query_len) {
         }
 
         fprintf(fp, "%s %d %s %s %s\n", name, ttl, rclass, rtype, rdata);
-        // free_rr(rr);
+        free_rr(rr);
     }
+    fclose(fp);
+}
+
+void gen_trace_packet(char *packet, const char *send, const char *recv,
+                      int flag) {
+    unsigned short f = htons(0xff00);
+    memcpy(packet, &f, 2);
+    char tmp[64] = {0};
+    char ip[6] = {0};
+    if (flag) {
+        unsigned short p = htons(SENDER_PORT);
+        char port[3] = {0};
+        serialize_addr(send, &ip);
+        strcat(tmp, send);
+        memcpy(packet + 2, ip, 4);
+        memcpy(packet + 6, &p, 2);
+        serialize_addr(recv, &ip);
+        memcpy(packet + 8, ip, 4);
+        p = htons(DNS_PORT);
+        memcpy(packet + 10, p, 2);
+    } else {
+        unsigned short p = htons(SENDER_PORT);
+        char port[3] = {0};
+        serialize_addr(send, &ip);
+        memcpy(packet + 2, ip, 4);
+        memcpy(packet + 6, &p, 2);
+        serialize_addr(recv, &ip);
+        memcpy(packet + 8, ip, 4);
+        p = htons(DNS_PORT);
+        memcpy(packet + 10, p, 2);
+    }
+}
+
+void print_trace(struct Trace *trace) {
+    FILE *fp = fopen("./data/trace.txt", "a");
+    char *send_ip = malloc(32);
+
+    struct in_addr s = {0};
+    s.s_addr = trace->send_ip;
+
+    char *tmp = inet_ntoa(s);
+    memcpy(send_ip, tmp, strlen(tmp));
+    char *recv_ip = malloc(32);
+    struct in_addr r = {0};
+    r.s_addr = trace->recv_ip;
+    tmp = inet_ntoa(r);
+    memcpy(recv_ip, tmp, strlen(tmp));
+    fprintf(fp, "%s:%d -> %s:%d\n", send_ip, ntohs(trace->send_port), recv_ip,
+            ntohs(trace->recv_port));
+
+    free(send_ip);
+    free(recv_ip);
     fclose(fp);
 }

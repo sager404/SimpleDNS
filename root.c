@@ -47,7 +47,7 @@ int main() {
                     perror("Database error!");
                     exit(EXIT_FAILURE);
                 }
-                header->flags = htons(gen_flags(1, OP_STD, 1, R_FINE));
+                header->flags = htons(FLAGS_RESPONSE);
                 length += gen_response(buffer + 2, header, query);
                 length += add_new_rr(buffer + 2 + length, RRs + ns_idx);
                 length += add_new_a_rr(buffer + 2 + length, RRs + a_idx);
@@ -55,11 +55,18 @@ int main() {
             } else {
                 init_header(header, header->id, 0x0000, header->queryNum, 0, 0,
                             0);
-                header->flags = htons(gen_flags(1, OP_STD, 1, R_NAME_ERROR));
+                header->flags = htons(FLAGS_NOTFOUND);
                 length += gen_response(buffer + 2, header, query);
                 *((unsigned short *)buffer) = htons(length);
             }
             tcp_send(client_sock, buffer, length + 2);
+            struct Trace trace = {0};
+            trace.send_ip = inet_addr(SCD1_SERVER_IP);
+            trace.send_port = htons(DNS_PORT);
+            trace.recv_ip = inet_addr(LOCAL_SERVER_IP);
+            trace.recv_port = htons(SENDER_PORT);
+            print_trace(&trace);
+            close(client_sock);
             break;
         }
         close(client_sock);
