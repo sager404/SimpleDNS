@@ -55,26 +55,35 @@ int main(int argc, char *argv[]) {
     free(query);
     udp_send(sock, &local_server_addr, packetOut, len);
     unsigned int sock_len = 0;
+    int i = 1;
+    while (1) {
+        udp_receive(sock, &client_addr, packetIn);
+        if (packetIn[0] == 0xff) {
+            char addr[16] = {0};
+            parse_addr(addr, packetIn+2);
+            printf("hop %d: %s\n", i, addr);
+            i++;
+        } else {
+            struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
+            header = (struct DNS_Header *)packetIn;
+            printf("********** DNS Response **********\n");
+            clock_gettime(CLOCK_MONOTONIC, &end_time);
+            double ms = (end_time.tv_sec - start_time.tv_sec) * 1e3 +
+                        (end_time.tv_nsec - start_time.tv_nsec) / 1e6;
+            printf("*Response time:\t %.2fms\n", ms);
+            if (ntohs(header->flags) == FLAGS_NOTFOUND) {
+                printf("Not found!\n");
+            } else {
+                parse_dns_response(packetIn, rr);
 
-    udp_receive(sock, &client_addr, packetIn);
-
-    struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
-    header = (struct DNS_Header *)packetIn;
-    printf("********** DNS Response **********\n");
-    clock_gettime(CLOCK_MONOTONIC, &end_time);
-    double ms = (end_time.tv_sec - start_time.tv_sec) * 1e3 +
-                (end_time.tv_nsec - start_time.tv_nsec) / 1e6;
-    printf("*Response time:\t %.2fms\n", ms);
-    if (ntohs(header->flags) == FLAGS_NOTFOUND) {
-        printf("Not found!\n");
-    } else {
-        parse_dns_response(packetIn, rr);
-
-        printf("*Address:\t %s\n", rr->rdata);
-        free(rr->rdata);
+                printf("*Address:\t %s\n", rr->rdata);
+                free(rr->rdata);
+            }
+            printf("**********************************\n");
+            free(rr);
+            break;
+        }
     }
-    printf("**********************************\n");
-    free(rr);
 
     close(sock);
 }

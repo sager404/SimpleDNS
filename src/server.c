@@ -82,8 +82,15 @@ int parse_rr(char *packet, struct DNS_RR *rr) {
     memcpy(&rr->length, packet + offset, sizeof(rr->length));
     offset += sizeof(rr->length);
     unsigned short length = ntohs(rr->length);
-    rr->rdata = malloc(length);
-    memcpy(rr->rdata, packet + offset, length);
+    if (ntohs(rr->type) == MX) {
+        rr->rdata = malloc(length);
+        memcpy(rr->rdata, packet + offset + 2, length - 2);
+
+    } else {
+        rr->rdata = malloc(length);
+        memcpy(rr->rdata, packet + offset, length);
+    }
+
     offset += length;
     return offset;
 }
@@ -131,7 +138,7 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
     }
     int ret = 0;
     int flag = 0;
-    struct DNS_Header *header = (struct DNS_Header *)(packet+*offset-12);
+    struct DNS_Header *header = (struct DNS_Header *)(packet + *offset - 12);
     short type = ntohs(query->qtype);
     char rname[128] = {0};
     if (ntohs(query->qtype) == PTR) {
@@ -153,7 +160,7 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
         fscanf(fp, "%s %d %s %s %s\n", name, &ttl, rclass, rtype, rdata);
         if (!strcmp(rname, name)) {
             int ntype = get_type(rtype);
-            if (ntype == type || ntype == A) {
+            if (ntype == type) {
                 struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
 
                 gen_dns_rr(rr, ntype, ttl, rdata, 0, name);
@@ -168,6 +175,7 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
                     rr_offset += (14 + strlen(rdata) + 1);
                     bzero(rname, 128);
                     strcpy(rname, rdata);
+                    type = A;
 
                 } else if (ntype == NS) {
                     header->authorNum = htons(ntohs(header->authorNum) + 1);
@@ -225,8 +233,9 @@ void add_local_cache(char *packet, int query_len) {
             else
                 parse_name(rr->rdata, rdata);
         }
+
         fprintf(fp, "%s %d %s %s %s\n", name, ttl, rclass, rtype, rdata);
-        free_rr(rr);
+        // free_rr(rr);
     }
     fclose(fp);
 }

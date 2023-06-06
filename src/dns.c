@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 void init_addr(struct sockaddr_in *sockaddr, const char *addr) {
     memset(sockaddr, 0, sizeof(struct sockaddr_in));
@@ -85,7 +86,7 @@ void gen_dns_rr(struct DNS_RR *rr, short type, int ttl, char *addr, char offset,
     } else if (type == MX) {
         len = strlen(addr) + 4;
         rr->rdata = malloc(len);
-
+        bzero(rr->rdata, 2);
         serialize_name(rr->rdata + 2, addr);
     } else {
         len = strlen(addr) + 2;
@@ -111,7 +112,6 @@ unsigned short parse_query_packet(char *packet, struct DNS_Header *header,
         query->name = malloc(++len);
         memcpy(query->name, packet + start, len);
         offset++;
-
     }
 
     memcpy(&query->qtype, packet + offset, sizeof(query->qtype));
@@ -153,6 +153,8 @@ short get_type_name(short type, char *str) {
         strcpy(str, "MX");
     else if (type == PTR)
         strcpy(str, "PTR");
+    else if (type == NS)
+        strcpy(str, "NS");
 }
 
 short add_rr(char *packet, struct DNS_RR *rr) {
@@ -263,8 +265,8 @@ unsigned char *get_rname_domain(const unsigned char *rname, int level) {
         l++;
     }
 
-    unsigned char *domain =
-        (unsigned char *)malloc((lengths[l - level] + 1) * sizeof(unsigned char));
+    unsigned char *domain = (unsigned char *)malloc((lengths[l - level] + 1) *
+                                                    sizeof(unsigned char));
     memset(domain, 0, lengths[l - level] + 1);
     memcpy(domain, domains[l - level], lengths[l - level] + 1);
     free(tmp);
