@@ -88,66 +88,36 @@ int parse_rr(char *packet, struct DNS_RR *rr) {
     return offset;
 }
 
-int get_local_cache(char *packet, struct DNS_Query *query, short offset) {
-    FILE *fp = fopen("./data/local_server_cache.txt", "r");
-    int ret = 0;
-    if (fp == NULL) {
-        perror("file open failed");
-        return 0;
-    }
-    int flag = 0;
-    struct DNS_Header *header = (struct DNS_Header *)packet;
-    short type = ntohs(query->qtype);
-    char rname[128] = {0};
-    if (ntohs(query->qtype) == PTR) {
-        parse_ptr(query->name, rname);
+int parse_packet_rr(char *packet, struct DNS_RR *rr, int offset) {
+    char name[128] = {0};
+
+    int len = get_rname_length(packet + offset);
+    if (len == 2) {
+        char tmp[128] = {0};
+        char j = packet[offset + 1];
+        rr->name = malloc(strlen(packet + j));
+        strcpy(rr->name, packet + j);
+        offset += 2;
+
     } else {
-        parse_name(query->name, rname);
+        rr->name = malloc(len);
+        memcpy(rr->name, packet, len);
+        offset += len;
     }
 
-    char rr_offset = sizeof(struct DNS_Header);
-    while (!feof(fp)) {
-
-        char name[128] = {0};
-        int ttl;
-        char rclass[3] = {0};
-        char rtype[6] = {0};
-        char rdata[128] = {0};
-        fscanf(fp, "%s %d %s %s %s\n", name, &ttl, rclass, rtype, rdata);
-        if (!strcmp(rname, name)) {
-            int ntype = get_type(rtype);
-            if (ntype == type || ntype == A) {
-                struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
-
-                if (flag) {
-                    header->addNum = htons(ntohs(header->addNum) + 1);
-                } else {
-                    header->answerNum = htons(ntohs(header->answerNum) + 1);
-                }
-                gen_dns_rr(rr, ntype, ttl, rdata, rr_offset, name);
-                offset += add_rr(packet + offset, rr);
-                if (ntype == PTR) {
-
-                    free(rr);
-                    return 1;
-                } else if (ntype == MX) {
-
-                    flag = 1;
-                    rr_offset += (14 + strlen(rdata) + 1);
-                    bzero(rname, 128);
-                    strcpy(rname, rdata);
-
-                } else {
-                    rr_offset += (12 + strlen(rdata) + 1);
-                    ret = 1;
-                }
-
-                free(rr);
-            }
-        }
-    }
-    fclose(fp);
-    return ret;
+    memcpy(&rr->type, packet + offset, sizeof(rr->type));
+    offset += sizeof(rr->type);
+    memcpy(&rr->rclass, packet + offset, sizeof(rr->rclass));
+    offset += sizeof(rr->rclass);
+    memcpy(&rr->ttl, packet + offset, sizeof(rr->ttl));
+    offset += sizeof(rr->ttl);
+    memcpy(&rr->length, packet + offset, sizeof(rr->length));
+    offset += sizeof(rr->length);
+    unsigned short length = ntohs(rr->length);
+    rr->rdata = malloc(length);
+    memcpy(rr->rdata, packet + offset, length);
+    offset += length;
+    return offset;
 }
 
 int load_data(char *packet, struct DNS_Query *query, short *offset,
@@ -161,7 +131,7 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
     }
     int ret = 0;
     int flag = 0;
-    struct DNS_Header *header = (struct DNS_Header *)packet;
+    struct DNS_Header *header = (struct DNS_Header *)(packet+*offset-12);
     short type = ntohs(query->qtype);
     char rname[128] = {0};
     if (ntohs(query->qtype) == PTR) {
@@ -170,7 +140,9 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
         parse_name(query->name, rname);
     }
 
-    char rr_offset = sizeof(struct DNS_Header);
+    char rr_offset = *offset;
+    *offset += get_rname_length(packet + *offset);
+    *offset += 4;
     while (!feof(fp)) {
 
         char name[128] = {0};
@@ -184,7 +156,7 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
             if (ntype == type || ntype == A) {
                 struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
 
-                gen_dns_rr(rr, ntype, ttl, rdata, rr_offset, name);
+                gen_dns_rr(rr, ntype, ttl, rdata, 0, name);
                 *offset += add_rr(packet + *offset, rr);
                 if (ntype == PTR) {
                     header->addNum = htons(ntohs(header->addNum) + 1);
@@ -221,14 +193,16 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,
     return ret;
 }
 
-void add_local_cache(char *packet, int ans_num) {
+void add_local_cache(char *packet, int query_len) {
 
     FILE *fp = fopen("./data/local_server_cache.txt", "a");
     if (fp == NULL) {
         perror("file open failed");
         return;
     }
-    int offset = 0;
+    int offset = query_len;
+    struct DNS_Header *header = (struct DNS_Header *)packet;
+    int ans_num = ntohs(header->answerNum) + ntohs(header->addNum);
     for (int i = 0; i < ans_num; i++) {
         struct DNS_RR *rr = malloc(sizeof(struct DNS_RR));
         offset += parse_rr(packet + offset, rr);
@@ -237,6 +211,7 @@ void add_local_cache(char *packet, int ans_num) {
         int ttl = ntohl(rr->ttl);
         char *rclass = "IN";
         char rtype[6] = {0};
+
         get_type_name(ntohs(rr->type), rtype);
         if (ntohs(rr->type) == PTR) {
             parse_ptr(rr->name, name);
@@ -251,6 +226,7 @@ void add_local_cache(char *packet, int ans_num) {
                 parse_name(rr->rdata, rdata);
         }
         fprintf(fp, "%s %d %s %s %s\n", name, ttl, rclass, rtype, rdata);
+        free_rr(rr);
     }
     fclose(fp);
 }

@@ -1,4 +1,5 @@
 #include "orgcom.h"
+#include "dns.h"
 
 
 int main(){
@@ -40,13 +41,20 @@ int main(){
 	memcpy(packetOut,packetIn,BUFSIZE);
 	dns_query *resQuery = (dns_query *)malloc(sizeof(dns_query));
 	dns_header *resHead = (struct DNS_Header *)(packetOut+2);
-	int len = parse_query_packet(packetOut+2,resHead,resQuery);
-	if(load_data(packetOut+2, resQuery, &len, file)){
-		unsigned int len_p = htons(cal_packet_len(packetOut+2));
+	unsigned short q_len = parse_query_packet(packetOut+2,resHead,resQuery);
+	unsigned short len = 14;
+	if(load_data(packetOut, resQuery, &len, file)){
 		resHead->flags=htons(FLAGS_RESPONSE);
-		memcpy(packetOut, &len_p, 2);
-		tcp_send(client_sock, packetOut, ntohs(len_p)+2);
+		short n_len = htons(len);
+		memcpy(packetOut, &n_len,2);
+		tcp_send(client_sock, packetOut, len);
+	}else{
+		short n_len = htons(q_len);
+		memcpy(packetOut, &n_len,2);
+		resHead->flags=htons(FLAGS_NOTFOUND);
+		tcp_send(client_sock, packetOut, q_len+2);
 	}
+	close(client_sock);
 	}   
 	close(sock);
 }	
