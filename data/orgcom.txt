@@ -1,7 +1,10 @@
-xzy.microsoft.com 86100 IN CNAME gsc.microsoft.com
 gsc.microsoft.com 86400 IN A 192.168.3.1
-gsc.ietf.org 86400 IN A 192.168.3.2
-mail.shiyan.microsoft.com 86400 IN A 192.168.3.5
-mail.dns.ietf.org 86400 IN A 192.168.3.7
-microsoft.com 86100 IN MX mail.microsoft.com
-mail.microsoft.com 86100 IN A 123.4.5.7
+gsc.microsoft.com 86100 IN MX mail.gsc.microsoft.com
+mail.gsc.microsoft.com 86400 IN A 192.168.3.2
+gsc.microsoft.com 86100 IN CNAME lzk.microsoft.com
+gsc.microsoft.com 86100 IN CNAME txy.microsoft.com
+
+gsc.ietf.org 86400 IN A 192.168.3.3
+gsc.ietf.org 86400 IN MX mail.gsc.ietf.org
+mail.gsc.ietf.org 86100 IN A 192.168.3.4
+gsc.ietf.org 86100 IN CNAME lzk.ietf.org

@@ -11,5 +11,4 @@ int load_data(char *packet, struct DNS_Query *query, short *offset,const char *f
 int deserialize_header(unsigned char *buffer, struct DNS_Header *header);
 int deserialize_query(unsigned char *buffer, struct DNS_Query *query);
 
-
 #endif

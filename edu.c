@@ -10,7 +10,6 @@ int main(){
 	unsigned char packetOut[BUFSIZE];	
     int recvMsgSize;
     int outMsgSize; 
-	char ipAddr[100];
 	char* file = "edu.txt";
 	//不需要分割名字，因为已经是最底层服务器，拿文件查询即可 
 

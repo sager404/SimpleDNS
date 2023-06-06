@@ -1,5 +1,4 @@
 bupt.edu.cn 86400 IN A 123.123.0.1
-is.edu.cn 86100 IN A 123.234.0.1
-abc.edu.cn 86100 IN CNAME bupt.edu.cn
 bupt.edu.cn 86100 IN MX mail.bupt.edu.cn
 mail.bupt.edu.cn 86100 IN A 123.234.0.2
+bupt.edu.cn 86100 IN CNAME qmplus.edu.cn
